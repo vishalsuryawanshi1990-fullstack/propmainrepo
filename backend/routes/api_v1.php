@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
+use App\Http\Controllers\Api\V1\ChatController;
 use App\Http\Controllers\Api\V1\CouponController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\KycDocumentController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\PropertyController;
 use App\Http\Controllers\Api\V1\PropertyMediaController;
@@ -92,6 +94,19 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Sprint 4 — Chat & Notifications
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/chats', [ChatController::class, 'index']);
+    Route::post('/chats', [ChatController::class, 'store']);
+    Route::get('/chats/{chat}/messages', [ChatController::class, 'messages']);
+    Route::post('/chats/{chat}/messages', [ChatController::class, 'sendMessage']);
+    Route::post('/chats/{chat}/read', [ChatController::class, 'markRead']);
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/me/fcm-token', [NotificationController::class, 'registerFcmToken']);
+});
+
 // Sprint 5 — Admin APIs
 Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin|moderator'])
     ->group(base_path('routes/admin.php'));

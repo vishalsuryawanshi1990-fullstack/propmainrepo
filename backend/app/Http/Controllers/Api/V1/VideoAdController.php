@@ -8,6 +8,7 @@ use App\Models\VideoAdEvent;
 use App\Services\Monetization\AdMobSsvVerifier;
 use App\Services\Monetization\ScratchCardService;
 use App\Services\Monetization\WalletService;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -56,7 +57,7 @@ class VideoAdController extends Controller
      * and we don't want a flood of retries for a request we've already
      * decided is invalid/replayed.
      */
-    public function ssvCallback(Request $request, AdMobSsvVerifier $verifier, WalletService $wallets, ScratchCardService $scratchCards): JsonResponse
+    public function ssvCallback(Request $request, AdMobSsvVerifier $verifier, WalletService $wallets, ScratchCardService $scratchCards, NotificationService $notifications): JsonResponse
     {
         if (! $verifier->verify($request)) {
             Log::warning('AdMob SSV signature verification failed', ['query' => $request->query()]);
@@ -76,6 +77,7 @@ class VideoAdController extends Controller
         $user = User::find($event->user_id);
         $wallets->credit($user->wallet, 1, 'video_ad', $event->id);
         $scratchCards->spawn($user, 'video');
+        $notifications->notify($user, 'scratch_card.ready', 'Scratch card ready!', 'Scratch your card to reveal your reward.');
 
         return response()->apiSuccess(null, 'Credited.');
     }

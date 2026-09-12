@@ -47,4 +47,9 @@ return [
         'verifier_keys_url' => env('ADMOB_VERIFIER_KEYS_URL', 'https://www.gstatic.com/admob/reward/verifier-keys.json'),
     ],
 
+    'firebase' => [
+        'credentials_path' => env('FIREBASE_CREDENTIALS_PATH'),
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+    ],
+
 ];

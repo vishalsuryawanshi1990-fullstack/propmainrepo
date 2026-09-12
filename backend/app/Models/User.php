@@ -15,7 +15,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'phone', 'password', 'status', 'device_id'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'status', 'device_id', 'fcm_token'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -70,5 +70,15 @@ class User extends Authenticatable
     public function scratchCards(): HasMany
     {
         return $this->hasMany(ScratchCard::class);
+    }
+
+    /**
+     * Overrides Notifiable::notifications(), which assumes Laravel's own
+     * polymorphic notifications table shape — ours (AppNotification) is a
+     * simpler user_id-keyed table per 03-database-schema.md.
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(AppNotification::class);
     }
 }

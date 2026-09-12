@@ -21,6 +21,13 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    // Not the `channels:` shorthand above — that authenticates the
+    // broadcasting/auth route via the "web" session guard, which mobile
+    // clients using Sanctum bearer tokens don't have.
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['middleware' => ['auth:sanctum']],
+    )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->throttleApi();
 

@@ -3,16 +3,19 @@
 namespace App\Http\Controllers\Api\Webhooks;
 
 use App\Http\Controllers\Controller;
+use App\Mail\PaymentReceiptMail;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\Monetization\ScratchCardService;
 use App\Services\Monetization\WalletService;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Razorpay\Api\Errors\SignatureVerificationError;
 use Razorpay\Api\Utility;
 
@@ -25,7 +28,7 @@ use Razorpay\Api\Utility;
  */
 class RazorpayWebhookController extends Controller
 {
-    public function handle(Request $request, WalletService $wallets, ScratchCardService $scratchCards): JsonResponse
+    public function handle(Request $request, WalletService $wallets, ScratchCardService $scratchCards, NotificationService $notifications): JsonResponse
     {
         $signature = $request->header('X-Razorpay-Signature', '');
 
@@ -53,21 +56,27 @@ class RazorpayWebhookController extends Controller
             return response()->apiSuccess(null, 'Ignored.');
         }
 
-        DB::transaction(function () use ($payment, $gatewayPaymentId, $wallets, $scratchCards) {
+        DB::transaction(function () use ($payment, $gatewayPaymentId, $wallets, $scratchCards, $notifications) {
             $payment->forceFill([
                 'status' => 'paid',
                 'webhook_verified' => true,
                 'gateway_payment_id' => $gatewayPaymentId,
             ])->save();
 
-            $this->fulfill($payment, $wallets, $scratchCards);
+            $this->fulfill($payment, $wallets, $scratchCards, $notifications);
         });
 
         return response()->apiSuccess(null, 'Processed.');
     }
 
-    private function fulfill(Payment $payment, WalletService $wallets, ScratchCardService $scratchCards): void
+    private function fulfill(Payment $payment, WalletService $wallets, ScratchCardService $scratchCards, NotificationService $notifications): void
     {
+        $user = User::findOrFail($payment->user_id);
+
+        if ($user->email) {
+            Mail::to($user->email)->queue(new PaymentReceiptMail($payment));
+        }
+
         if ($payment->purpose !== 'coupon_purchase') {
             return;
         }
@@ -77,8 +86,6 @@ class RazorpayWebhookController extends Controller
         if (! $coupon) {
             return;
         }
-
-        $user = User::findOrFail($payment->user_id);
 
         if ($coupon->type === 'fixed_credits') {
             $wallets->credit($user->wallet, (int) $coupon->value, 'coupon', $payment->id);
@@ -94,5 +101,6 @@ class RazorpayWebhookController extends Controller
         $coupon->increment('redemptions_count');
 
         $scratchCards->spawn($user, 'coupon');
+        $notifications->notify($user, 'scratch_card.ready', 'Scratch card ready!', 'Scratch your card to reveal your reward.');
     }
 }

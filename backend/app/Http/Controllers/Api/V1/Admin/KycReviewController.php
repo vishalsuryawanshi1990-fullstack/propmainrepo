@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\RejectKycDocumentRequest;
 use App\Http\Resources\KycDocumentResource;
 use App\Models\KycDocument;
 use App\Services\Audit\AuditLogger;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -24,7 +25,7 @@ class KycReviewController extends Controller
         );
     }
 
-    public function verify(Request $request, KycDocument $kycDocument): JsonResponse
+    public function verify(Request $request, KycDocument $kycDocument, NotificationService $notifications): JsonResponse
     {
         $before = $kycDocument->toArray();
 
@@ -37,10 +38,12 @@ class KycReviewController extends Controller
 
         AuditLogger::log('kyc.verify', $kycDocument, $before, $kycDocument->toArray());
 
+        $notifications->notify($kycDocument->user, 'kyc.verified', 'Document verified', 'Your '.$kycDocument->doc_type.' has been verified.');
+
         return response()->apiSuccess(new KycDocumentResource($kycDocument), 'KYC document verified.');
     }
 
-    public function reject(RejectKycDocumentRequest $request, KycDocument $kycDocument): JsonResponse
+    public function reject(RejectKycDocumentRequest $request, KycDocument $kycDocument, NotificationService $notifications): JsonResponse
     {
         $before = $kycDocument->toArray();
 
@@ -52,6 +55,8 @@ class KycReviewController extends Controller
         ])->save();
 
         AuditLogger::log('kyc.reject', $kycDocument, $before, $kycDocument->toArray());
+
+        $notifications->notify($kycDocument->user, 'kyc.rejected', 'Document rejected', $kycDocument->rejection_reason);
 
         return response()->apiSuccess(new KycDocumentResource($kycDocument), 'KYC document rejected.');
     }
