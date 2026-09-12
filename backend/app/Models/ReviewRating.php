@@ -13,6 +13,8 @@ class ReviewRating extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'reviews_ratings';
+
     protected function casts(): array
     {
         return [

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'price', 'price_negotiable', 'area_sqft', 'bedrooms', 'bathrooms', 'floor_no',
     'total_floors', 'furnishing_status', 'city_id', 'locality_id', 'address',
     'latitude', 'longitude', 'rera_registration_no', 'status', 'is_featured',
+    'address_price_hash', 'primary_image_hash', 'duplicate_of_property_id', 'is_flagged_duplicate',
 ])]
 class Property extends Model
 {
@@ -30,6 +31,7 @@ class Property extends Model
             'longitude' => 'decimal:7',
             'is_featured' => 'boolean',
             'views_count' => 'integer',
+            'is_flagged_duplicate' => 'boolean',
         ];
     }
 

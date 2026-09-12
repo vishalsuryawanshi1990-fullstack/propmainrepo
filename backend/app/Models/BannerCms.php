@@ -12,6 +12,8 @@ class BannerCms extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'banners_cms';
+
     protected function casts(): array
     {
         return [

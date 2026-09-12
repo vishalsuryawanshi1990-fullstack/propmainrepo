@@ -13,6 +13,8 @@ class CityMaster extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'cities_master';
+
     public function localities(): HasMany
     {
         return $this->hasMany(LocalityMaster::class, 'city_id');

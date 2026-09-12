@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
+use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\KycDocumentController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\PropertyController;
+use App\Http\Controllers\Api\V1\PropertyMediaController;
 use App\Http\Controllers\Api\V1\PublicProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,11 +32,36 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Sprint 2 — Property Catalog
-// Route::get('/properties', ...);
-// Route::get('/properties/{property}', ...);
-// Route::middleware('auth:sanctum')->group(function () {
-//     Route::post('/properties', ...);
-// });
+Route::get('/properties', [PropertyController::class, 'index']);
+Route::get('/properties/featured', [PropertyController::class, 'featured']);
+Route::get('/properties/{property}', [PropertyController::class, 'show']);
+Route::get('/properties/{property}/similar', [PropertyController::class, 'similar']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/me/properties', [PropertyController::class, 'myListings']);
+    Route::post('/properties', [PropertyController::class, 'store']);
+    Route::patch('/properties/{property}', [PropertyController::class, 'update']);
+    Route::patch('/properties/{property}/status', [PropertyController::class, 'updateStatus']);
+    Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
+    Route::post('/properties/{property}/report', [PropertyController::class, 'report']);
+
+    Route::post('/properties/{property}/favorite', [FavoriteController::class, 'store']);
+    Route::delete('/properties/{property}/favorite', [FavoriteController::class, 'destroy']);
+    Route::get('/favorites', [FavoriteController::class, 'index']);
+
+    Route::get('/properties/{property}/{type}/presigned-url', [PropertyMediaController::class, 'presignedUrl'])
+        ->whereIn('type', ['image', 'video']);
+    Route::post('/properties/{property}/{type}', [PropertyMediaController::class, 'attach'])
+        ->whereIn('type', ['image', 'video']);
+    Route::delete('/properties/{property}/{type}/{mediaId}', [PropertyMediaController::class, 'destroy'])
+        ->whereIn('type', ['image', 'video'])->whereNumber('mediaId');
+
+    // Local/dev fallback for the pre-signed upload itself (see MediaUploadService).
+    Route::post('/properties/{property}/{type}/direct-upload/{path}', [PropertyMediaController::class, 'directUpload'])
+        ->whereIn('type', ['image', 'video'])
+        ->where('path', '.*')
+        ->name('properties.media.direct-upload');
+});
 
 // Sprint 3 — Monetization Engine (see 06-monetization-engine.md)
 // Route::middleware('auth:sanctum')->group(function () {

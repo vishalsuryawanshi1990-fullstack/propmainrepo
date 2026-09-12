@@ -11,4 +11,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PropertyTypeMaster extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected $table = 'property_types_master';
 }

@@ -11,4 +11,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class AmenityMaster extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected $table = 'amenities_master';
 }

@@ -13,6 +13,8 @@ class LocalityMaster extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'localities_master';
+
     protected function casts(): array
     {
         return [

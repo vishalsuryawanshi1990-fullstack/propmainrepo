@@ -13,6 +13,8 @@ class BlogCms extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'blogs_cms';
+
     protected function casts(): array
     {
         return [

@@ -12,6 +12,8 @@ class ScratchRewardMaster extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'scratch_rewards_master';
+
     protected function casts(): array
     {
         return [
