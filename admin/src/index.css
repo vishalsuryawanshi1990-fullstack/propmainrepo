@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+
+/* Class-based dark mode (doc09: a manual toggle, not just system pref). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Design tokens from 10-ui-ux-animation-guide.md — shared visual
+   language across the RN app, website, and this admin panel. */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary-50: oklch(0.97 0.02 200);
+  --color-primary-100: oklch(0.92 0.04 200);
+  --color-primary-500: oklch(0.42 0.07 200);
+  --color-primary-600: oklch(0.36 0.07 200);
+  --color-primary-700: oklch(0.3 0.06 200);
+  --color-primary-900: oklch(0.2 0.05 200);
+
+  /* Accent — used *specifically* for monetization/reward moments
+     (unlock, scratch card, coupon), never in core browsing UI. */
+  --color-accent-400: oklch(0.82 0.15 75);
+  --color-accent-500: oklch(0.75 0.16 70);
+  --color-accent-600: oklch(0.68 0.16 65);
+
+  --color-surface: oklch(0.98 0.003 90);
+  --color-surface-dark: oklch(0.18 0.01 250);
+}
+
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-surface text-neutral-900 antialiased dark:bg-surface-dark dark:text-neutral-100;
+}
