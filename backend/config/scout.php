@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Property;
+
 return [
 
     /*
@@ -140,15 +142,10 @@ return [
         'host' => env('MEILISEARCH_HOST', 'http://localhost:7700'),
         'key' => env('MEILISEARCH_KEY'),
         'index-settings' => [
-            // 'users' => [
-            //     'filterableAttributes' => ['id', 'name', 'email'],
-            //     'embedders' => [
-            //         'default' => [
-            //             'source' => 'userProvided',
-            //             'dimensions' => 1536,
-            //         ],
-            //     ],
-            // ],
+            Property::class => [
+                'searchableAttributes' => ['title', 'description', 'address', 'locality_name', 'city_name'],
+                'rankingRules' => ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'],
+            ],
         ],
         'model-settings' => [
             // User::class => [

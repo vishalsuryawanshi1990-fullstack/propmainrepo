@@ -12,6 +12,7 @@ use App\Models\Property;
 use App\Models\PropertyView;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class PropertyController extends Controller
 {
@@ -27,6 +28,14 @@ class PropertyController extends Controller
         $query = Property::query()
             ->where('status', 'live')
             ->with(['propertyType', 'city', 'locality', 'images' => fn ($q) => $q->where('is_primary', true)]);
+
+        // Typo-tolerant free-text search (Sprint 6) via Scout/Meilisearch —
+        // narrows to matching IDs, then every other filter below still
+        // applies normally on top of that.
+        $query->when($request->filled('q'), function ($q) use ($request) {
+            $ids = Property::search($request->string('q')->toString())->keys();
+            $q->whereIn('id', $ids);
+        });
 
         $query->when($request->filled('city'), fn ($q) => $q->where('city_id', $request->integer('city')));
         $query->when($request->filled('locality'), fn ($q) => $q->where('locality_id', $request->integer('locality')));
@@ -106,13 +115,13 @@ class PropertyController extends Controller
 
     public function featured(): JsonResponse
     {
-        $featured = Property::query()
+        $featured = Cache::remember('properties:featured', now()->addMinutes(5), fn () => Property::query()
             ->where('status', 'live')
             ->where('is_featured', true)
             ->with(['propertyType', 'city', 'locality', 'images' => fn ($q) => $q->where('is_primary', true)])
             ->latest()
             ->limit(20)
-            ->get();
+            ->get());
 
         return response()->apiSuccess(PropertyResource::collection($featured));
     }

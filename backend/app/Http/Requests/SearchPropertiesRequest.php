@@ -23,6 +23,7 @@ class SearchPropertiesRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'q' => ['sometimes', 'string', 'max:255'],
             'city' => ['sometimes', 'integer', 'exists:cities_master,id'],
             'locality' => ['sometimes', 'integer', 'exists:localities_master,id'],
             'type' => ['sometimes', 'integer', 'exists:property_types_master,id'],

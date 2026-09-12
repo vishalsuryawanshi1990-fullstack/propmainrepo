@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\CmsController;
 use App\Http\Controllers\Api\V1\CouponController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\KycDocumentController;
+use App\Http\Controllers\Api\V1\LocalityController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\PropertyController;
@@ -44,6 +45,7 @@ Route::get('/properties', [PropertyController::class, 'index']);
 Route::get('/properties/featured', [PropertyController::class, 'featured']);
 Route::get('/properties/{property}', [PropertyController::class, 'show']);
 Route::get('/properties/{property}/similar', [PropertyController::class, 'similar']);
+Route::get('/localities/{locality}/insights', [LocalityController::class, 'insights']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/properties', [PropertyController::class, 'myListings']);
