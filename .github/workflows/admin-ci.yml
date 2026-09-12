@@ -6,6 +6,7 @@ on:
     paths: ["admin/**"]
   pull_request:
     paths: ["admin/**"]
+  workflow_dispatch: {}
 
 jobs:
   lint-and-build:
