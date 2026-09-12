@@ -13,10 +13,15 @@ class KycDocument extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /**
+     * file_path is encrypted at rest per 05-security-compliance.md — a
+     * DB dump/leak shouldn't reveal the storage layout of KYC documents.
+     */
     protected function casts(): array
     {
         return [
             'verified_at' => 'datetime',
+            'file_path' => 'encrypted',
         ];
     }
 

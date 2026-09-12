@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnforceHsts;
+use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -30,6 +32,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->throttleApi();
+        $middleware->append(EnforceHsts::class);
+        // Runs on every authenticated request (a no-op for guests) so a
+        // suspend/ban takes effect immediately, not just at next login.
+        $middleware->appendToGroup('api', EnsureUserIsActive::class);
 
         // API-only app — never redirect an unauthenticated request to a
         // "login" route that doesn't exist; let it fall through to the

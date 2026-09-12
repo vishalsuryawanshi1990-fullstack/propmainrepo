@@ -8,6 +8,7 @@ use App\Http\Requests\PresignMediaRequest;
 use App\Http\Resources\PropertyImageResource;
 use App\Http\Resources\PropertyVideoResource;
 use App\Jobs\DetectDuplicateListingJob;
+use App\Jobs\SanitizeUploadedImageJob;
 use App\Models\Property;
 use App\Models\PropertyImage;
 use App\Models\PropertyVideo;
@@ -55,7 +56,7 @@ class PropertyMediaController extends Controller
         return response()->apiSuccess(null, 'Uploaded.');
     }
 
-    public function attach(AttachMediaRequest $request, Property $property, string $type): JsonResponse
+    public function attach(AttachMediaRequest $request, Property $property, string $type, MediaUploadService $media): JsonResponse
     {
         $this->assertValidType($type);
 
@@ -66,14 +67,20 @@ class PropertyMediaController extends Controller
             $property->{$type.'s'}()->update(['is_primary' => false]);
         }
 
+        $path = $request->string('path')->toString();
+
         $record = $model::create([
             'property_id' => $property->id,
-            'file_path' => $request->string('path')->toString(),
+            'file_path' => $path,
             'is_primary' => $isPrimary,
             'sort_order' => $request->integer('sort_order'),
         ]);
 
         if ($type === 'image') {
+            // Re-encode to strip embedded scripts/EXIF (05-security-
+            // compliance.md) — queued because a real S3 pre-signed
+            // upload never passes the bytes through this request at all.
+            SanitizeUploadedImageJob::dispatch($media->disk(), $path);
             DetectDuplicateListingJob::dispatch($property->id);
         }
 

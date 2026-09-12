@@ -44,6 +44,11 @@ class OtpController extends Controller
         }
 
         $isNewUser = ! User::where('phone', $phone)->exists();
+        $deviceId = $request->string('device_id')->toString();
+
+        if ($isNewUser && $deviceId !== '' && $this->deviceSignupLimitReached($deviceId)) {
+            return response()->apiError('Too many accounts created from this device today.', [], 429);
+        }
 
         /** @var User $user */
         $user = DB::transaction(function () use ($phone, $request, $isNewUser, $wallets) {
@@ -77,5 +82,17 @@ class OtpController extends Controller
             'needs_registration' => $user->name === 'New User',
             'user' => new UserResource($user),
         ], 'OTP verified.');
+    }
+
+    /**
+     * doc05: "Device fingerprinting + IP velocity checks on signup to
+     * slow down fake-account farms created purely to harvest free
+     * unlock credits."
+     */
+    private function deviceSignupLimitReached(string $deviceId): bool
+    {
+        return User::where('device_id', $deviceId)
+            ->where('created_at', '>=', now()->subDay())
+            ->count() >= (int) config('security.max_signups_per_device_per_day');
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Resources\PropertyResource;
 use App\Jobs\DetectDuplicateListingJob;
 use App\Models\Property;
 use App\Models\PropertyView;
+use App\Services\Content\HtmlSanitizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -126,9 +127,10 @@ class PropertyController extends Controller
         return response()->apiSuccess(PropertyResource::collection($featured));
     }
 
-    public function store(StorePropertyRequest $request): JsonResponse
+    public function store(StorePropertyRequest $request, HtmlSanitizer $sanitizer): JsonResponse
     {
         $property = new Property($request->safe()->except(['is_draft', 'amenity_ids']));
+        $property->description = $sanitizer->clean($property->description);
         $property->owner_id = $request->user()->id;
         $property->status = $request->boolean('is_draft') ? 'draft' : 'pending_review';
         $property->save();
@@ -142,9 +144,14 @@ class PropertyController extends Controller
         return response()->apiSuccess(new PropertyResource($property), 'Property submitted.', [], 201);
     }
 
-    public function update(UpdatePropertyRequest $request, Property $property): JsonResponse
+    public function update(UpdatePropertyRequest $request, Property $property, HtmlSanitizer $sanitizer): JsonResponse
     {
         $property->fill($request->safe()->except(['amenity_ids']));
+
+        if ($request->has('description')) {
+            $property->description = $sanitizer->clean($property->description);
+        }
+
         $property->save();
 
         if ($request->has('amenity_ids')) {

@@ -36,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me', [ProfileController::class, 'show']);
     Route::patch('/me', [ProfileController::class, 'update']);
+    Route::delete('/me', [ProfileController::class, 'destroy']);
     Route::get('/me/kyc-documents', [KycDocumentController::class, 'index']);
     Route::post('/me/kyc-documents', [KycDocumentController::class, 'store']);
 });

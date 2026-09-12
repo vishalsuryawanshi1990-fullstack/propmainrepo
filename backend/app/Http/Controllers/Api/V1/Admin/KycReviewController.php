@@ -27,7 +27,7 @@ class KycReviewController extends Controller
 
     public function verify(Request $request, KycDocument $kycDocument, NotificationService $notifications): JsonResponse
     {
-        $before = $kycDocument->toArray();
+        $before = $this->redactedSnapshot($kycDocument);
 
         $kycDocument->forceFill([
             'status' => 'verified',
@@ -36,7 +36,7 @@ class KycReviewController extends Controller
             'rejection_reason' => null,
         ])->save();
 
-        AuditLogger::log('kyc.verify', $kycDocument, $before, $kycDocument->toArray());
+        AuditLogger::log('kyc.verify', $kycDocument, $before, $this->redactedSnapshot($kycDocument));
 
         $notifications->notify($kycDocument->user, 'kyc.verified', 'Document verified', 'Your '.$kycDocument->doc_type.' has been verified.');
 
@@ -45,7 +45,7 @@ class KycReviewController extends Controller
 
     public function reject(RejectKycDocumentRequest $request, KycDocument $kycDocument, NotificationService $notifications): JsonResponse
     {
-        $before = $kycDocument->toArray();
+        $before = $this->redactedSnapshot($kycDocument);
 
         $kycDocument->forceFill([
             'status' => 'rejected',
@@ -54,7 +54,7 @@ class KycReviewController extends Controller
             'rejection_reason' => $request->string('rejection_reason')->toString(),
         ])->save();
 
-        AuditLogger::log('kyc.reject', $kycDocument, $before, $kycDocument->toArray());
+        AuditLogger::log('kyc.reject', $kycDocument, $before, $this->redactedSnapshot($kycDocument));
 
         $notifications->notify($kycDocument->user, 'kyc.rejected', 'Document rejected', $kycDocument->rejection_reason);
 
@@ -63,12 +63,27 @@ class KycReviewController extends Controller
 
     /**
      * Streams the private file to a reviewer. Reached only via the
-     * temporary signed URL issued in KycDocumentResource.
+     * temporary signed URL issued in KycDocumentResource. Every access
+     * is logged — doc05: "access logged (who viewed which user's
+     * Aadhaar/PAN)".
      */
     public function download(Request $request, KycDocument $kycDocument): mixed
     {
         abort_unless($request->hasValidSignature(), 403);
 
+        AuditLogger::log('kyc.download', $kycDocument, null, ['viewer_id' => $request->user()?->id]);
+
         return Storage::disk('local')->response($kycDocument->file_path);
+    }
+
+    /**
+     * $kycDocument->toArray() decrypts the `encrypted` file_path cast on
+     * read — never pass that straight into an audit log row, or the
+     * plaintext storage path leaks into a table that was never meant to
+     * hold it.
+     */
+    private function redactedSnapshot(KycDocument $kycDocument): array
+    {
+        return [...$kycDocument->toArray(), 'file_path' => '[redacted]'];
     }
 }
