@@ -52,14 +52,15 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
     /**
      * Register the Telescope gate.
      *
-     * This gate determines who can access Telescope in non-local environments.
+     * This gate determines who can access Telescope in non-local
+     * environments — though per doc02 ("Telescope (dev only)"),
+     * TELESCOPE_ENABLED should just be false in production, making this
+     * moot there. Role-based for the same reason as Horizon's gate.
      */
     protected function gate(): void
     {
         Gate::define('viewTelescope', function (User $user) {
-            return in_array($user->email, [
-                //
-            ]);
+            return $user->hasRole('admin');
         });
     }
 }
