@@ -70,6 +70,42 @@ that silently degrade instead of failing loudly if left blank:
    means either the key cache is stale or something's tampering with
    the callback in transit.
 
+## CI/CD (GitHub Actions)
+
+Three CI workflows (`.github/workflows/{backend,admin,website}-ci.yml`)
+run on every push/PR touching their respective app, path-filtered so a
+website-only change doesn't re-run the backend test suite. Each also
+has a `workflow_dispatch` trigger for a manual re-run.
+
+`backend-deploy.yml` deploys to a VPS over SSH, chained via
+`workflow_run` so it only fires **after** Backend CI has passed on
+`main` — not as a parallel race against it. It needs these repo
+secrets (Settings → Secrets and variables → Actions), none of which
+exist until you add them:
+
+| Secret | What it is |
+|---|---|
+| `VPS_HOST` | Server IP or hostname |
+| `VPS_USERNAME` | SSH user (needs write access to `VPS_DEPLOY_PATH` and permission to run the artisan commands / restart supervisor-managed processes) |
+| `VPS_SSH_KEY` | Private key matching a public key already in that user's `~/.ssh/authorized_keys` |
+| `VPS_DEPLOY_PATH` | Absolute path to the existing git checkout on the server (e.g. `/var/www/estateconnect/backend`) |
+| `VPS_PORT` | Optional, defaults to 22 |
+| `MAINTENANCE_BYPASS_SECRET` | Optional — lets you hit `/?<secret>` to bypass maintenance mode while `php artisan down` is active mid-deploy |
+
+**Before the first automated deploy can work**, the server needs the
+one-time setup this doc already describes: clone the repo to
+`VPS_DEPLOY_PATH`, run through "First deploy" below once by hand, and
+have supervisor already running Horizon/Reverb/the scheduler
+(`docker/supervisor/*.conf` or your platform's equivalent) — the
+deploy script only pulls new code and restarts what's already running,
+it doesn't provision a server from scratch.
+
+Admin panel and website are deployed separately via Vercel's native
+Git integration (one Vercel project per app, each with its "Root
+Directory" set to `admin` or `website`) rather than a custom Actions
+workflow — Vercel builds and deploys on every push to `main`
+automatically, with zero YAML needed on this side.
+
 ## First deploy
 
 ```bash
