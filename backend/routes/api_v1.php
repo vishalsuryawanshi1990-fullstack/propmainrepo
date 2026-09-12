@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Api\V1\ChatController;
+use App\Http\Controllers\Api\V1\CmsController;
 use App\Http\Controllers\Api\V1\CouponController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\KycDocumentController;
@@ -107,6 +108,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/me/fcm-token', [NotificationController::class, 'registerFcmToken']);
 });
 
-// Sprint 5 — Admin APIs
+// Sprint 5 — Admin APIs + public CMS (feeds the app home screen + website)
+Route::get('/banners', [CmsController::class, 'banners']);
+Route::get('/blogs', [CmsController::class, 'blogs']);
+Route::get('/blogs/{slug}', [CmsController::class, 'blog']);
+Route::get('/faqs', [CmsController::class, 'faqs']);
+
+// Per doc01: moderators handle day-to-day moderation (listings, reports,
+// KYC); coupon/reward config, CMS, analytics, and user management are
+// admin-only. admin.php itself splits into two role-gated sub-groups.
 Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin|moderator'])
     ->group(base_path('routes/admin.php'));

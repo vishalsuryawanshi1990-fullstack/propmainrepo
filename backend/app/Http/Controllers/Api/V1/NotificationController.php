@@ -12,7 +12,7 @@ class NotificationController extends Controller
     {
         $notifications = $request->user()->notifications()->latest()->latest('id')->paginate(20);
 
-        $data = $notifications->getCollection()->map(fn ($n) => [
+        return response()->apiPaginated($notifications, fn ($n) => [
             'id' => $n->id,
             'type' => $n->type,
             'title' => $n->title,
@@ -21,12 +21,6 @@ class NotificationController extends Controller
             'read_at' => $n->read_at,
             'created_at' => $n->created_at,
         ]);
-
-        return response()->apiSuccess(
-            $data,
-            'OK',
-            ['page' => $notifications->currentPage(), 'per_page' => $notifications->perPage(), 'total' => $notifications->total()],
-        );
     }
 
     public function markRead(Request $request, int $notification): JsonResponse
