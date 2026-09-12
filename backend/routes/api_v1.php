@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\CouponController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\KycDocumentController;
 use App\Http\Controllers\Api\V1\LocalityController;
+use App\Http\Controllers\Api\V1\MasterDataController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\PropertyController;
@@ -28,6 +29,12 @@ Route::get('/ping', fn () => response()->apiSuccess(['pong' => true]));
 Route::post('/auth/otp/request', [OtpController::class, 'request'])->middleware('throttle:otp-request');
 Route::post('/auth/otp/verify', [OtpController::class, 'verify']);
 Route::get('/users/{user}/public-profile', [PublicProfileController::class, 'show']);
+
+// Reference-data lookups for any "post a property" client form.
+Route::get('/property-types', [MasterDataController::class, 'propertyTypes']);
+Route::get('/amenities', [MasterDataController::class, 'amenities']);
+Route::get('/cities', [MasterDataController::class, 'cities']);
+Route::get('/localities', [MasterDataController::class, 'localities']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register']);
