@@ -2,7 +2,14 @@
 
 namespace App\Providers;
 
+use App\Services\Otp\Gateways\LogOtpGateway;
+use App\Services\Otp\Gateways\Msg91OtpGateway;
+use App\Services\Otp\Gateways\TwilioOtpGateway;
+use App\Services\Otp\OtpGateway;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,7 +20,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(OtpGateway::class, function () {
+            return match (config('otp.gateway')) {
+                'msg91' => new Msg91OtpGateway,
+                'twilio' => new TwilioOtpGateway,
+                default => new LogOtpGateway,
+            };
+        });
     }
 
     /**
@@ -39,6 +52,22 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return Response::json($payload, $status);
+        });
+
+        // Baseline limits per 04-api-specification.md's rate-limiting table.
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('otp-request', function (Request $request) {
+            return [
+                Limit::perHour(5)->by('otp-phone:'.$request->input('phone')),
+                Limit::perHour(20)->by('otp-ip:'.$request->ip()),
+            ];
+        });
+
+        RateLimiter::for('unlock-spend', function (Request $request) {
+            return Limit::perMinute(20)->by($request->user()?->id ?: $request->ip());
         });
     }
 }
