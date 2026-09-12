@@ -1,0 +1,269 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+
+interface Option {
+  id: number
+  name: string
+}
+
+const initialForm = {
+  title: '',
+  description: '',
+  property_type_id: '',
+  listing_type: 'sale' as 'sale' | 'rent',
+  price: '',
+  city_id: '',
+  locality_id: '',
+  address: '',
+  latitude: '',
+  longitude: '',
+  bedrooms: '',
+  bathrooms: '',
+  area_sqft: '',
+}
+
+export default function PostPropertyForm() {
+  const router = useRouter()
+  const [propertyTypes, setPropertyTypes] = useState<Option[]>([])
+  const [cities, setCities] = useState<Option[]>([])
+  const [localities, setLocalities] = useState<Option[]>([])
+  const [form, setForm] = useState(initialForm)
+  const [errors, setErrors] = useState<Record<string, string[]>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/property-types')
+      .then((r) => r.json())
+      .then((json) => setPropertyTypes(json.data ?? []))
+    fetch('/api/cities')
+      .then((r) => r.json())
+      .then((json) => setCities(json.data ?? []))
+  }, [])
+
+  useEffect(() => {
+    // No city selected yet — `localities` already starts empty, so there's
+    // nothing to synchronize (and nothing to setState synchronously for).
+    if (!form.city_id) return
+
+    fetch(`/api/localities?city_id=${form.city_id}`)
+      .then((r) => r.json())
+      .then((json) => setLocalities(json.data ?? []))
+  }, [form.city_id])
+
+  function set<K extends keyof typeof initialForm>(key: K, value: (typeof initialForm)[K]) {
+    setForm((f) => ({ ...f, [key]: value }))
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+    setErrors({})
+    setSubmitError(null)
+
+    const res = await fetch('/api/properties', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...form,
+        property_type_id: Number(form.property_type_id),
+        city_id: Number(form.city_id),
+        locality_id: Number(form.locality_id),
+        price: Number(form.price),
+        latitude: Number(form.latitude),
+        longitude: Number(form.longitude),
+        bedrooms: form.bedrooms ? Number(form.bedrooms) : undefined,
+        bathrooms: form.bathrooms ? Number(form.bathrooms) : undefined,
+        area_sqft: form.area_sqft ? Number(form.area_sqft) : undefined,
+      }),
+    })
+    const json = await res.json()
+    setSubmitting(false)
+
+    if (!res.ok) {
+      setSubmitError(json.message)
+      setErrors(json.errors ?? {})
+      return
+    }
+
+    router.push(`/properties/${json.data.id}`)
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      {submitError && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{submitError}</div>}
+
+      <Field label="Title" error={errors.title}>
+        <input
+          required
+          value={form.title}
+          onChange={(e) => set('title', e.target.value)}
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+        />
+      </Field>
+
+      <Field label="Description" error={errors.description}>
+        <textarea
+          rows={4}
+          value={form.description}
+          onChange={(e) => set('description', e.target.value)}
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+        />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Property type" error={errors.property_type_id}>
+          <select
+            required
+            value={form.property_type_id}
+            onChange={(e) => set('property_type_id', e.target.value)}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+          >
+            <option value="">Select…</option>
+            {propertyTypes.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Listing type" error={errors.listing_type}>
+          <select
+            value={form.listing_type}
+            onChange={(e) => set('listing_type', e.target.value as 'sale' | 'rent')}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+          >
+            <option value="sale">For sale</option>
+            <option value="rent">For rent</option>
+          </select>
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="City" error={errors.city_id}>
+          <select
+            required
+            value={form.city_id}
+            onChange={(e) => {
+              set('city_id', e.target.value)
+              set('locality_id', '')
+            }}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+          >
+            <option value="">Select…</option>
+            {cities.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Locality" error={errors.locality_id}>
+          <select
+            required
+            disabled={!form.city_id}
+            value={form.locality_id}
+            onChange={(e) => set('locality_id', e.target.value)}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2 disabled:opacity-50"
+          >
+            <option value="">Select…</option>
+            {localities.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+
+      <Field label="Address" error={errors.address}>
+        <input
+          required
+          value={form.address}
+          onChange={(e) => set('address', e.target.value)}
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+        />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Latitude" error={errors.latitude}>
+          <input
+            required
+            type="number"
+            step="any"
+            value={form.latitude}
+            onChange={(e) => set('latitude', e.target.value)}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+          />
+        </Field>
+        <Field label="Longitude" error={errors.longitude}>
+          <input
+            required
+            type="number"
+            step="any"
+            value={form.longitude}
+            onChange={(e) => set('longitude', e.target.value)}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+          />
+        </Field>
+      </div>
+      <p className="-mt-2 text-xs text-neutral-400">
+        Drop-pin map picker is a mobile-app feature (doc08) — enter coordinates directly here for now.
+      </p>
+
+      <div className="grid grid-cols-3 gap-4">
+        <Field label="Price (₹)" error={errors.price}>
+          <input
+            required
+            type="number"
+            value={form.price}
+            onChange={(e) => set('price', e.target.value)}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+          />
+        </Field>
+        <Field label="Bedrooms" error={errors.bedrooms}>
+          <input
+            type="number"
+            value={form.bedrooms}
+            onChange={(e) => set('bedrooms', e.target.value)}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+          />
+        </Field>
+        <Field label="Area (sqft)" error={errors.area_sqft}>
+          <input
+            type="number"
+            value={form.area_sqft}
+            onChange={(e) => set('area_sqft', e.target.value)}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+          />
+        </Field>
+      </div>
+
+      <p className="text-sm text-neutral-500">
+        Listings go to moderation before appearing publicly — photos can be added once the listing is approved
+        (image upload is not yet supported from this form).
+      </p>
+
+      <button
+        disabled={submitting}
+        className="w-full rounded-lg bg-primary-600 py-2.5 font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+      >
+        {submitting ? 'Submitting…' : 'Submit for review'}
+      </button>
+    </form>
+  )
+}
+
+function Field({ label, error, children }: { label: string; error?: string[]; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-sm font-medium text-neutral-700">{label}</span>
+      {children}
+      {error && <span className="mt-1 block text-xs text-red-600">{error[0]}</span>}
+    </label>
+  )
+}

@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+/* Shared design tokens from 10-ui-ux-animation-guide.md — same palette
+   as the admin panel and (conceptually) the mobile app. */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Lora', ui-serif, Georgia, serif;
+
+  --color-primary-50: oklch(0.97 0.02 200);
+  --color-primary-100: oklch(0.92 0.04 200);
+  --color-primary-500: oklch(0.42 0.07 200);
+  --color-primary-600: oklch(0.36 0.07 200);
+  --color-primary-700: oklch(0.3 0.06 200);
+  --color-primary-900: oklch(0.2 0.05 200);
+
+  --color-accent-400: oklch(0.82 0.15 75);
+  --color-accent-500: oklch(0.75 0.16 70);
+  --color-accent-600: oklch(0.68 0.16 65);
+
+  --color-surface: oklch(0.98 0.003 90);
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-surface text-neutral-900 antialiased;
+}
