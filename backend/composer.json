@@ -13,6 +13,7 @@
         "laravel/scout": "^11.7",
         "laravel/tinker": "^3.0",
         "meilisearch/meilisearch-php": "^1.17",
+        "razorpay/razorpay": "^2.9",
         "spatie/laravel-permission": "^8.3"
     },
     "require-dev": {

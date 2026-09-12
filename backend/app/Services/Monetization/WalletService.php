@@ -62,4 +62,26 @@ class WalletService
             ]);
         });
     }
+
+    /**
+     * Cashback rewards land in wallets.cashback_balance rather than
+     * contact_unlock_credits — same ledger table, a different column of
+     * the wallet is what actually moved (doc03 doesn't split the ledger
+     * by balance type, so the source/reference_id pair is what
+     * disambiguates it when reading the ledger back).
+     */
+    public function creditCashback(Wallet $wallet, float $amount, string $source, ?int $referenceId = null): WalletTransaction
+    {
+        return DB::transaction(function () use ($wallet, $amount, $source, $referenceId) {
+            $wallet->lockForUpdate();
+            $wallet->increment('cashback_balance', $amount);
+
+            return $wallet->transactions()->create([
+                'type' => 'credit',
+                'source' => $source,
+                'amount' => $amount,
+                'reference_id' => $referenceId,
+            ]);
+        });
+    }
 }

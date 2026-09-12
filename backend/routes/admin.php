@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\CouponController;
 use App\Http\Controllers\Api\V1\Admin\KycReviewController;
+use App\Http\Controllers\Api\V1\Admin\ScratchRewardController;
 use Illuminate\Support\Facades\Route;
 
 // Base path /api/v1/admin — mounted with auth:sanctum + role:admin|moderator in api_v1.php.
@@ -18,8 +20,9 @@ Route::get('/kyc/{kycDocument}/file', [KycReviewController::class, 'download'])
     ->name('admin.kyc.download')
     ->middleware('signed');
 
-// Route::apiResource('coupons', ...);
-// Route::apiResource('scratch-rewards', ...);
+Route::apiResource('coupons', CouponController::class)->except(['show']);
+Route::apiResource('scratch-rewards', ScratchRewardController::class)->except(['show'])
+    ->parameters(['scratch-rewards' => 'scratchReward']);
 // Route::get('/analytics/{report}', ...);
 // Route::apiResource('cms/banners', ...);
 // Route::apiResource('cms/blogs', ...);

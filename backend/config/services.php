@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    'razorpay' => [
+        'key' => env('RAZORPAY_KEY_ID'),
+        'secret' => env('RAZORPAY_KEY_SECRET'),
+        'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET'),
+    ],
+
+    'admob' => [
+        // Real key set is fetched/cached from this endpoint per Google's
+        // AdMob SSV spec — see AdMobSsvVerifier.
+        'verifier_keys_url' => env('ADMOB_VERIFIER_KEYS_URL', 'https://www.gstatic.com/admob/reward/verifier-keys.json'),
+    ],
+
 ];

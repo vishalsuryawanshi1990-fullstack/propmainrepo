@@ -2,12 +2,17 @@
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
+use App\Http\Controllers\Api\V1\CouponController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\KycDocumentController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\PropertyController;
 use App\Http\Controllers\Api\V1\PropertyMediaController;
 use App\Http\Controllers\Api\V1\PublicProfileController;
+use App\Http\Controllers\Api\V1\ScratchCardController;
+use App\Http\Controllers\Api\V1\UnlockController;
+use App\Http\Controllers\Api\V1\VideoAdController;
+use App\Http\Controllers\Api\V1\WalletController;
 use Illuminate\Support\Facades\Route;
 
 // Base path /api/v1 — see 04-api-specification.md for the full endpoint list.
@@ -64,15 +69,27 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Sprint 3 — Monetization Engine (see 06-monetization-engine.md)
-// Route::middleware('auth:sanctum')->group(function () {
-//     Route::get('/wallet', ...);
-//     Route::post('/unlocks/check', ...);
-//     Route::post('/unlocks/spend', ...)->middleware('throttle:unlock-spend');
-//     Route::post('/video-ads/request-token', ...);
-//     Route::post('/coupons/purchase', ...);
-//     Route::post('/scratch-cards/{scratchCard}/scratch', ...);
-// });
-// Route::post('/video-ads/ssv-callback', ...); // called by AdMob's servers, not the app
+Route::get('/coupons', [CouponController::class, 'index']);
+
+// Server-to-server only — verified by AdMobSsvVerifier's signature check,
+// not by Sanctum. Never called by the app itself.
+Route::get('/video-ads/ssv-callback', [VideoAdController::class, 'ssvCallback']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/wallet', [WalletController::class, 'show']);
+    Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
+
+    Route::post('/unlocks/check', [UnlockController::class, 'check']);
+    Route::post('/unlocks/spend', [UnlockController::class, 'spend'])->middleware('throttle:unlock-spend');
+
+    Route::post('/video-ads/request-token', [VideoAdController::class, 'requestToken']);
+
+    Route::post('/coupons/purchase', [CouponController::class, 'purchase']);
+    Route::post('/coupons/redeem', [CouponController::class, 'redeem']);
+
+    Route::get('/scratch-cards/pending', [ScratchCardController::class, 'pending']);
+    Route::post('/scratch-cards/{scratchCard}/scratch', [ScratchCardController::class, 'scratch']);
+});
 
 // Sprint 4 — Chat & Notifications
 // Sprint 5 — Admin APIs

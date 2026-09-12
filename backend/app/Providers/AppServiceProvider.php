@@ -6,12 +6,15 @@ use App\Services\Otp\Gateways\LogOtpGateway;
 use App\Services\Otp\Gateways\Msg91OtpGateway;
 use App\Services\Otp\Gateways\TwilioOtpGateway;
 use App\Services\Otp\OtpGateway;
+use App\Services\Payments\RazorpayApiGateway;
+use App\Services\Payments\RazorpayGateway;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\ServiceProvider;
+use Razorpay\Api\Api as RazorpayApi;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +30,12 @@ class AppServiceProvider extends ServiceProvider
                 default => new LogOtpGateway,
             };
         });
+
+        $this->app->singleton(RazorpayApi::class, function () {
+            return new RazorpayApi(config('services.razorpay.key'), config('services.razorpay.secret'));
+        });
+
+        $this->app->bind(RazorpayGateway::class, RazorpayApiGateway::class);
     }
 
     /**
