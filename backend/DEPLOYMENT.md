@@ -16,7 +16,7 @@ first-deploy command block.
 | App server | nginx + php-fpm (see `docker/`) | Whatever the host already runs (Apache/LiteSpeed via cPanel, usually) — nothing to configure here |
 | Queue worker | `php artisan horizon` (persistent, Redis-backed) | No persistent worker exists. `routes/console.php` schedules `queue:work --stop-when-empty --max-time=50` every minute instead — jobs (`DetectDuplicateListingJob`, `SanitizeUploadedImageJob`, queued notification mail) run in short bursts, not instantly, but never block the HTTP response either |
 | Scheduler | `php artisan schedule:work` under supervisor | A single cron entry (below) calling `schedule:run` every minute — this is what actually drives the queue-worker line above, so it's not optional |
-| Realtime chat | `php artisan reverb:start` (a persistent WebSocket listener) | Not possible on shared hosting at all — no persistent port to bind. Set `BROADCAST_CONNECTION=pusher` instead (doc02 named Pusher as exactly this fallback); clients connect to Pusher's servers, not yours |
+| Realtime chat | `php artisan reverb:start` (a persistent WebSocket listener) | Not possible on shared hosting at all — no persistent port to bind. Set `BROADCAST_CONNECTION=firebase` instead (see `FirebaseBroadcaster`) — clients connect to Firebase Realtime Database, not yours. Reuses the same Google service account as FCM push, so there's no second third-party vendor to sign up for |
 | Search | Meilisearch (persistent server) | Not possible either. `SCOUT_DRIVER=database` (works, no typo-tolerance) unless you point at a hosted Meilisearch Cloud/Algolia instance |
 | Cache/queue/session store | Redis | Already `database` by default in `.env.example` — no change needed, Redis was never a hard requirement here |
 
@@ -69,9 +69,10 @@ that silently degrade instead of failing loudly if left blank:
   real origins, comma-separated, no wildcard (05-security-compliance.md).
 - `TELESCOPE_ENABLED=false` — doc02 says dev-only; there's no code-level
   block on running it in production, this env var is the only gate.
-- `BROADCAST_CONNECTION=pusher` + `PUSHER_*` — see the table above;
-  leaving this as `reverb` on shared hosting means chat silently never
-  delivers realtime messages (REST endpoints still work, nothing pushes).
+- `BROADCAST_CONNECTION=firebase` + `FIREBASE_DATABASE_URL` — see the
+  table above; leaving this as `reverb` on shared hosting means chat
+  silently never delivers realtime messages (REST endpoints still work,
+  nothing pushes). Same `FIREBASE_CREDENTIALS_PATH` service account as FCM.
 - `SCOUT_DRIVER=database` — leave as `meilisearch` here and search
   requests will error trying to reach a Meilisearch server that doesn't
   exist, unless you've pointed `MEILISEARCH_HOST` at a real hosted one.

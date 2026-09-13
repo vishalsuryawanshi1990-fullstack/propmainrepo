@@ -2,23 +2,24 @@
 
 namespace App\Services\Notifications;
 
-use Illuminate\Support\Facades\Cache;
+use App\Services\Google\GoogleServiceAccount;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
  * FCM's legacy server-key API is retired — the current HTTP v1 API is
  * authenticated via a Google service-account OAuth2 JWT bearer grant, not
- * a static key. No google/apiclient dependency: the JWT assertion is
- * small enough to sign directly with openssl.
+ * a static key (see GoogleServiceAccount).
  */
 class FcmPushService
 {
-    private const TOKEN_CACHE_KEY = 'fcm:access-token';
+    private const SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+
+    public function __construct(private GoogleServiceAccount $google) {}
 
     public function send(string $deviceToken, string $title, string $body, array $data = []): bool
     {
-        $credentials = $this->credentials();
+        $credentials = $this->google->credentials();
 
         if ($credentials === null) {
             Log::info('FCM push skipped — no service account configured.', compact('title')); // dev/no-op path
@@ -26,7 +27,7 @@ class FcmPushService
             return false;
         }
 
-        $accessToken = $this->accessToken($credentials);
+        $accessToken = $this->google->accessToken(self::SCOPE);
 
         if ($accessToken === null) {
             return false;
@@ -48,49 +49,5 @@ class FcmPushService
         }
 
         return $response->successful();
-    }
-
-    private function accessToken(array $credentials): ?string
-    {
-        return Cache::remember(self::TOKEN_CACHE_KEY, now()->addMinutes(55), function () use ($credentials) {
-            $now = time();
-            $header = $this->base64UrlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
-            $claims = $this->base64UrlEncode(json_encode([
-                'iss' => $credentials['client_email'],
-                'scope' => 'https://www.googleapis.com/auth/firebase.messaging',
-                'aud' => 'https://oauth2.googleapis.com/token',
-                'iat' => $now,
-                'exp' => $now + 3600,
-            ]));
-
-            $signingInput = "{$header}.{$claims}";
-            openssl_sign($signingInput, $signature, $credentials['private_key'], OPENSSL_ALGO_SHA256);
-            $jwt = $signingInput.'.'.$this->base64UrlEncode($signature);
-
-            $response = Http::asForm()->post('https://oauth2.googleapis.com/token', [
-                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-                'assertion' => $jwt,
-            ]);
-
-            return $response->successful() ? $response->json('access_token') : null;
-        });
-    }
-
-    private function credentials(): ?array
-    {
-        $path = config('services.firebase.credentials_path');
-
-        if (! $path || ! is_readable($path)) {
-            return null;
-        }
-
-        $json = json_decode(file_get_contents($path), true);
-
-        return isset($json['client_email'], $json['private_key'], $json['project_id']) ? $json : null;
-    }
-
-    private function base64UrlEncode(string $value): string
-    {
-        return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
     }
 }
