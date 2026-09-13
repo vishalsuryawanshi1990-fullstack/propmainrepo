@@ -2,8 +2,6 @@
 
 namespace App\Providers;
 
-use App\Broadcasting\FirebaseBroadcaster;
-use App\Services\Google\GoogleServiceAccount;
 use App\Services\Otp\Gateways\LogOtpGateway;
 use App\Services\Otp\Gateways\Msg91OtpGateway;
 use App\Services\Otp\Gateways\TwilioOtpGateway;
@@ -14,7 +12,6 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\ServiceProvider;
@@ -47,11 +44,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Shared-hosting realtime chat transport — see FirebaseBroadcaster.
-        Broadcast::extend('firebase', function ($app, array $config) {
-            return new FirebaseBroadcaster($app->make(GoogleServiceAccount::class), rtrim($config['database_url'] ?? '', '/'));
-        });
-
         Response::macro('apiSuccess', function (mixed $data = null, string $message = 'OK', array $meta = [], int $status = 200): JsonResponse {
             $payload = ['success' => true, 'data' => $data, 'message' => $message];
 

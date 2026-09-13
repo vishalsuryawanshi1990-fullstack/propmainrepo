@@ -11,8 +11,7 @@ return [
     | framework when an event needs to be broadcast. You may set this to
     | any of the connections defined in the "connections" array below.
     |
-    | Supported: "reverb", "firebase" (custom, see FirebaseBroadcaster),
-    | "ably", "redis", "log", "null"
+    | Supported: "reverb", "pusher", "ably", "redis", "log", "null"
     |
     */
 
@@ -47,12 +46,22 @@ return [
             ],
         ],
 
-        // Shared-hosting alternative to Reverb — no persistent WebSocket
-        // process needed (see FirebaseBroadcaster). Reuses the same
-        // service-account JSON as FCM push (FIREBASE_CREDENTIALS_PATH).
-        'firebase' => [
-            'driver' => 'firebase',
-            'database_url' => env('FIREBASE_DATABASE_URL'),
+        'pusher' => [
+            'driver' => 'pusher',
+            'key' => env('PUSHER_APP_KEY'),
+            'secret' => env('PUSHER_APP_SECRET'),
+            'app_id' => env('PUSHER_APP_ID'),
+            'options' => [
+                'cluster' => env('PUSHER_APP_CLUSTER'),
+                'host' => env('PUSHER_HOST') ?: 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
+                'port' => env('PUSHER_PORT', 443),
+                'scheme' => env('PUSHER_SCHEME', 'https'),
+                'encrypted' => true,
+                'useTLS' => env('PUSHER_SCHEME', 'https') === 'https',
+            ],
+            'client_options' => [
+                // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+            ],
         ],
 
         'ably' => [
