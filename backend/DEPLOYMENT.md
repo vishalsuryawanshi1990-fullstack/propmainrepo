@@ -127,7 +127,7 @@ them:
 |---|---|
 | `VPS_HOST` | Your shared host's SSH hostname/IP |
 | `VPS_USERNAME` | Your SSH username |
-| `VPS_SSH_KEY` | Private key matching a public key already added to that account (most cPanel hosts have an "SSH Access" page to add one) |
+| `VPS_PASSWORD` | Your SSH password (most shared hosts don't offer easy key-based SSH access — password auth over SSH is fine here) |
 | `VPS_DEPLOY_PATH` | Absolute path to the existing git checkout (step 4 of one-time setup above) |
 | `VPS_PORT` | Optional, defaults to 22 — some shared hosts use a non-standard SSH port, check yours |
 | `MAINTENANCE_BYPASS_SECRET` | Optional — lets you hit `/?<secret>` to bypass maintenance mode while `php artisan down` is active mid-deploy |
