@@ -1,0 +1,58 @@
+name: Backend CI
+
+# Lives under backend/.github/workflows/ in the propmainrepo monorepo, where
+# GitHub doesn't read it (only root .github/workflows/ counts there — see
+# backend-ci.yml). It becomes live once `git subtree split --prefix=backend`
+# lands this at the root of the standalone propbackend repo.
+
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, intl, pdo_sqlite, bcmath, redis
+          coverage: none
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      - name: Check code style (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Run dependency audit
+        run: composer audit
+
+      - name: Prepare SQLite database
+        run: |
+          mkdir -p database
+          touch database/database.sqlite
+
+      - name: Run migrations
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan migrate --no-interaction
+
+      - name: Run tests
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan test --compact
