@@ -3,6 +3,15 @@ name: Backend Deploy
 # Runs after "Backend CI" finishes on main — deploy only happens once
 # lint/audit/migrate/test have all passed on that exact commit, not as
 # a race against them.
+#
+# Written for shared hosting (SSH access, no root, no persistent
+# daemons): there's no Horizon/Reverb process to restart here — queued
+# jobs run via a cron-driven `php artisan schedule:run` on the server
+# (see routes/console.php), and realtime chat goes over Pusher instead
+# of a self-hosted Reverb process. If this ever moves to a VPS, restore
+# the `horizon:terminate`/`reverb:restart` steps removed from an
+# earlier version of this file (see git history) and switch
+# BROADCAST_CONNECTION back to reverb.
 on:
   workflow_run:
     workflows: ["Backend CI"]
@@ -35,6 +44,4 @@ jobs:
             php artisan config:cache
             php artisan route:cache
             php artisan event:cache
-            php artisan horizon:terminate || true
-            php artisan reverb:restart || true
             php artisan up
