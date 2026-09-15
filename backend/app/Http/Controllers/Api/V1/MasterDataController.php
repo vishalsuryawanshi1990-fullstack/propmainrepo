@@ -17,26 +17,31 @@ use Illuminate\Support\Facades\Cache;
  * listed them, but there's no other way to know a valid city_id/
  * locality_id/property_type_id to submit. Cached: this data changes
  * rarely (new cities/amenities are an admin/ops event, not a user one).
+ *
+ * Caches plain arrays (->toArray()), not raw Eloquent Collections —
+ * some PHP environments fail to unserialize cached Collection objects
+ * cleanly (surfaces as __PHP_Incomplete_Class_Name in the response),
+ * while plain arrays have no class identity to corrupt.
  */
 class MasterDataController extends Controller
 {
     public function propertyTypes(): JsonResponse
     {
-        $types = Cache::remember('master:property-types', now()->addDay(), fn () => PropertyTypeMaster::orderBy('name')->get(['id', 'name']));
+        $types = Cache::remember('master:property-types', now()->addDay(), fn () => PropertyTypeMaster::orderBy('name')->get(['id', 'name'])->toArray());
 
         return response()->apiSuccess($types);
     }
 
     public function amenities(): JsonResponse
     {
-        $amenities = Cache::remember('master:amenities', now()->addDay(), fn () => AmenityMaster::orderBy('category')->get(['id', 'name', 'icon', 'category']));
+        $amenities = Cache::remember('master:amenities', now()->addDay(), fn () => AmenityMaster::orderBy('category')->get(['id', 'name', 'icon', 'category'])->toArray());
 
         return response()->apiSuccess($amenities);
     }
 
     public function cities(): JsonResponse
     {
-        $cities = Cache::remember('master:cities', now()->addDay(), fn () => CityMaster::orderBy('name')->get(['id', 'name', 'state']));
+        $cities = Cache::remember('master:cities', now()->addDay(), fn () => CityMaster::orderBy('name')->get(['id', 'name', 'state'])->toArray());
 
         return response()->apiSuccess($cities);
     }
