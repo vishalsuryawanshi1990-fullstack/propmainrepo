@@ -9,8 +9,8 @@ const lora = Lora({ variable: '--font-lora', subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: {
-    default: 'EstateConnect — Verified Properties, Direct from Owners',
-    template: '%s | EstateConnect',
+    default: 'PropDealers — Verified Properties, Direct from Owners',
+    template: '%s | PropDealers',
   },
   description:
     'Search verified property listings for sale and rent. Connect directly with owners — no broker spam.',

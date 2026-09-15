@@ -4,7 +4,7 @@ import type { Faq } from '@/lib/types'
 
 export const metadata: Metadata = {
   title: 'FAQ',
-  description: 'Frequently asked questions about buying, selling, and unlocking contact details on EstateConnect.',
+  description: 'Frequently asked questions about buying, selling, and unlocking contact details on PropDealers.',
 }
 
 export default async function FaqPage() {

@@ -77,7 +77,7 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto flex max-w-sm flex-col items-center px-4 py-16">
-      <h1 className="mb-1 font-serif text-2xl font-bold text-primary-900">Sign in to EstateConnect</h1>
+      <h1 className="mb-1 font-serif text-2xl font-bold text-primary-900">Sign in to PropDealers</h1>
       <p className="mb-6 text-sm text-neutral-500">We&apos;ll text you a one-time code.</p>
 
       {error && <div className="mb-4 w-full rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}

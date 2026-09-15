@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { getSession } from '@/lib/session'
 import HeaderAuthActions from './HeaderAuthActions'
@@ -8,8 +9,9 @@ export default async function Header() {
   return (
     <header className="border-b border-neutral-200 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-        <Link href="/" className="font-serif text-xl font-bold text-primary-700">
-          EstateConnect
+        <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold text-primary-700">
+          <Image src="/logo.png" alt="" width={32} height={32} className="rounded" priority />
+          PropDealers
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm font-medium text-neutral-600 md:flex">

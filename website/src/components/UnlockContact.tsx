@@ -103,7 +103,7 @@ export default function UnlockContact({ propertyId, isSignedIn }: { propertyId: 
 
       {status === 'need-credits' && (
         <p className="text-sm text-neutral-500">
-          You&apos;re out of unlock credits. Open the EstateConnect app to watch a rewarded video or buy a coupon —
+          You&apos;re out of unlock credits. Open the PropDealers app to watch a rewarded video or buy a coupon —
           new credits work here too.
         </p>
       )}

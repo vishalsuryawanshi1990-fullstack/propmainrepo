@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="mt-16 border-t border-neutral-200 bg-white py-10">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-4 text-sm text-neutral-500 md:grid-cols-4">
         <div>
-          <p className="mb-3 font-semibold text-neutral-800">EstateConnect</p>
+          <p className="mb-3 font-semibold text-neutral-800">PropDealers</p>
           <p>Verified listings, direct from owners.</p>
         </div>
         <div>
