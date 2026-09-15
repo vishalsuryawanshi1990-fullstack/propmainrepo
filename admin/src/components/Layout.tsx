@@ -7,6 +7,7 @@ import ThemeToggle from './ThemeToggle'
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: '📊', end: true },
   { to: '/properties', label: 'Listings', icon: '🏠' },
+  { to: '/properties/new', label: 'Add Property', icon: '➕', adminOnly: true },
   { to: '/kyc', label: 'KYC Review', icon: '🪪' },
   { to: '/users', label: 'Users', icon: '👥' },
   { to: '/reports', label: 'Reports', icon: '🚩' },

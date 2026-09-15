@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api, type ApiEnvelope } from '../lib/api'
+import { useAuthStore } from '../lib/auth'
 
 interface PropertyRow {
   id: number
@@ -38,9 +40,21 @@ export default function Properties() {
     },
   })
 
+  const isAdmin = useAuthStore((s) => s.isAdmin())
+
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-50">Listing Moderation</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-50">Listing Moderation</h1>
+        {isAdmin && (
+          <Link
+            to="/properties/new"
+            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
+          >
+            + Add Property
+          </Link>
+        )}
+      </div>
 
       {isLoading && <p className="text-neutral-500">Loading…</p>}
       {!isLoading && properties?.length === 0 && (

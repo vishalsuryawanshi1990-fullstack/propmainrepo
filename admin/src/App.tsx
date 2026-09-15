@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard'
 import Kyc from './pages/Kyc'
 import Login from './pages/Login'
 import Properties from './pages/Properties'
+import PropertyForm from './pages/PropertyForm'
 import Reports from './pages/Reports'
 import ScratchRewards from './pages/ScratchRewards'
 import Users from './pages/Users'
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/reports" element={<Reports />} />
 
           <Route element={<RequireAdmin />}>
+            <Route path="/properties/new" element={<PropertyForm />} />
             <Route path="/coupons" element={<Coupons />} />
             <Route path="/scratch-rewards" element={<ScratchRewards />} />
             <Route path="/cms" element={<Cms />} />
