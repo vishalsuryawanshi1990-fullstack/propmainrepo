@@ -97,9 +97,15 @@ export default function PropertyDetail() {
   const [rejectReason, setRejectReason] = useState('')
   const [showReject, setShowReject] = useState(false)
 
-  const { data: property, isLoading } = useQuery({
+  const {
+    data: property,
+    isLoading,
+    isError,
+    error: fetchError,
+  } = useQuery({
     queryKey: ['admin', 'property', id],
     queryFn: async () => (await api.get<ApiEnvelope<PropertyDetailData>>(`/properties/${id}`)).data.data,
+    retry: false,
   })
 
   useEffect(() => {
@@ -243,6 +249,26 @@ export default function PropertyDetail() {
     } catch {
       setError('That doesn’t look like a valid YouTube link.')
     }
+  }
+
+  if (isError) {
+    const status = (fetchError as { response?: { status?: number; data?: { message?: string } } })?.response
+      ?.status
+    const message =
+      (fetchError as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+      'Failed to load this property.'
+
+    return (
+      <div className="space-y-3">
+        <button onClick={() => navigate('/properties')} className="text-sm text-neutral-500 hover:underline">
+          ← Back to Listings
+        </button>
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          {status ? `${status}: ` : ''}
+          {message}
+        </p>
+      </div>
+    )
   }
 
   if (isLoading || !property || !form) {
