@@ -112,35 +112,55 @@ that silently degrade instead of failing loudly if left blank:
 
 ## CI/CD (GitHub Actions)
 
-Three CI workflows (`.github/workflows/{backend,admin,website}-ci.yml`)
-run on every push/PR touching their respective app, path-filtered so a
-website-only change doesn't re-run the backend test suite. Each also
-has a `workflow_dispatch` trigger for a manual re-run.
+This backend lives in two places: `propmainrepo` (the monorepo, where
+development actually happens) and `propbackend` (a standalone repo
+produced by `git subtree split --prefix=backend`, kept in sync after
+every backend change — see the split-repo note at the top of this
+project). **The server's git remote points at `propbackend`, not
+`propmainrepo`** — that's the repo whose secrets/workflows actually
+matter for deployment.
 
-`backend-deploy.yml` deploys over SSH, chained via `workflow_run` so it
-only fires **after** Backend CI has passed on `main` — not as a
-parallel race against it. It needs these repo secrets (Settings →
-Secrets and variables → Actions), none of which exist until you add
-them:
+`propbackend`'s own `.github/workflows/ci.yml` and `deploy.yml` (they
+live at `backend/.github/workflows/` in the monorepo, inert there —
+only propbackend's *root* `.github/workflows/` is read by GitHub —
+and become live once split out) run lint/test, then deploy over SSH
+chained via `workflow_run` so it only fires **after** CI has passed on
+`main`, not as a parallel race against it. Set these secrets on the
+**`propbackend` repo itself** (Settings → Secrets and variables →
+Actions on github.com/.../propbackend), not on propmainrepo:
 
 | Secret | What it is |
 |---|---|
 | `VPS_HOST` | Your shared host's SSH hostname/IP |
 | `VPS_USERNAME` | Your SSH username |
 | `VPS_PASSWORD` | Your SSH password (most shared hosts don't offer easy key-based SSH access — password auth over SSH is fine here) |
-| `VPS_DEPLOY_PATH` | Absolute path to the existing git checkout (step 4 of one-time setup above) |
+| `VPS_DEPLOY_PATH` | Absolute path to the existing git checkout, e.g. `/home/<user>/domains/api.<domain>/laravel` (step 4 of one-time setup above) |
 | `VPS_PORT` | Optional, defaults to 22 — some shared hosts use a non-standard SSH port, check yours |
 | `MAINTENANCE_BYPASS_SECRET` | Optional — lets you hit `/?<secret>` to bypass maintenance mode while `php artisan down` is active mid-deploy |
 
 The deploy script only pulls new code, runs composer/migrations, and
 rebuilds caches — it doesn't provision anything, so the one-time server
-setup above has to happen first, by hand, once.
+setup above has to happen first, by hand, once. It invokes PHP via its
+full path (`/opt/alt/php84/usr/bin/php` on this host) rather than the
+bare `php`/`composer` commands — CloudLinux's per-account CLI PHP
+selector defaults to an older version (8.1) than what the site's
+PHP-FPM actually runs (8.4), and this app's dependencies require 8.4+.
 
-Admin panel and website are deployed separately via Vercel's native
-Git integration (one Vercel project per app, each with its "Root
-Directory" set to `admin` or `website`) rather than a custom Actions
-workflow — Vercel builds and deploys on every push to `main`
-automatically, with zero YAML needed on this side.
+**Do not connect this repo to Hostinger's own Git auto-deploy feature**
+(Websites → your site → Advanced → GIT). That tool always deploys flat
+into `public_html`, which on this setup is a *symlink* to
+`laravel/public` (see "Directory layout" above) — it follows the
+symlink and dumps the entire repo into it, corrupting the real public
+folder. This exact thing happened once already; the fix was moving the
+misplaced `public/public/` back out (see git history/session notes)
+and disconnecting the Git integration for this site for good. The
+GitHub Actions workflow above is the only deploy path for this app.
+
+Admin panel and website are deployed separately via each platform's
+own native Git integration (Hostinger's auto-deploy for the admin
+panel — a plain static Vite build, which that tool handles correctly;
+Vercel for the website, since it needs a real Node SSR runtime) rather
+than a custom Actions workflow.
 
 ## First deploy
 

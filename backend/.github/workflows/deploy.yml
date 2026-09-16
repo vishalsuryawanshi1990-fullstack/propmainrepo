@@ -1,0 +1,57 @@
+name: Backend Deploy
+
+# Lives under backend/.github/workflows/ in the propmainrepo monorepo (see
+# ci.yml in this same folder for why) — becomes live at the root of the
+# standalone propbackend repo, which is what the server's git remote
+# actually points at.
+#
+# Runs after "Backend CI" finishes on main — deploy only happens once
+# lint/audit/migrate/test have all passed on that exact commit, not as a
+# race against them.
+#
+# Shared hosting specifics:
+# - No root access, no persistent daemons — no Horizon/Reverb process to
+#   restart; queued jobs run via a cron-driven `php artisan schedule:run`
+#   (see routes/console.php), and realtime chat goes over Pusher.
+# - The SSH shell's default `php`/`composer` resolve to an old CLI PHP
+#   (8.1 on this host) via CloudLinux's per-account selector, which is
+#   unrelated to the PHP-FPM version the site itself runs on (8.4) — see
+#   DEPLOYMENT.md. Every command below uses the real 8.4 binary
+#   explicitly instead of relying on PATH.
+# - public_html here is a symlink to this checkout's public/ folder
+#   (shared hosting has no document-root setting to point at public/
+#   directly) — deliberately never touched by this workflow.
+on:
+  workflow_run:
+    workflows: ["Backend CI"]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+            PHP=/opt/alt/php84/usr/bin/php
+            cd ${{ secrets.VPS_DEPLOY_PATH }}
+            $PHP artisan down --secret="${{ secrets.MAINTENANCE_BYPASS_SECRET }}" || true
+            git fetch origin main
+            git reset --hard origin/main
+            $PHP "$(command -v composer)" install --no-dev --optimize-autoloader --no-interaction
+            $PHP artisan migrate --force
+            $PHP artisan config:cache
+            $PHP artisan route:cache
+            $PHP artisan event:cache
+            $PHP artisan up
