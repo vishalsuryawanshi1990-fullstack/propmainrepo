@@ -99,7 +99,7 @@ export default function PropertyForm() {
     enabled: form.city_id !== '',
   })
 
-  const create = useMutation({
+  const create = useMutation<{ data: { data: { id: number } } }, unknown, void>({
     mutationFn: () =>
       api.post('/properties', {
         title: form.title,
@@ -123,9 +123,9 @@ export default function PropertyForm() {
         is_draft: form.is_draft,
         amenity_ids: form.amenity_ids,
       }),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'properties', 'pending'] })
-      navigate('/properties')
+      navigate(`/properties/${response.data.data.id}`)
     },
     onError: (err: unknown) => {
       const message =
@@ -151,7 +151,8 @@ export default function PropertyForm() {
       <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-50">Add Property</h1>
       <p className="text-sm text-neutral-500">
         Creates a listing on behalf of a seller/agent (e.g. added over phone support). It enters the same moderation
-        queue as any other submission unless saved as a draft.
+        queue as any other submission unless saved as a draft. You'll be taken to the listing's detail page next to
+        add photos/videos.
       </p>
 
       {error && (

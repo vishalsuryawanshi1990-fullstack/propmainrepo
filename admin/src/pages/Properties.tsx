@@ -73,8 +73,8 @@ export default function Properties() {
             exit={{ opacity: 0, x: 300, transition: { duration: 0.25 } }}
             className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
           >
-            <div>
-              <p className="font-medium text-neutral-900 dark:text-neutral-50">
+            <Link to={`/properties/${property.id}`} className="min-w-0">
+              <p className="font-medium text-neutral-900 hover:underline dark:text-neutral-50">
                 {property.title}
                 {property.is_flagged_duplicate && (
                   <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
@@ -86,7 +86,7 @@ export default function Properties() {
                 ₹{Number(property.price).toLocaleString()} · {property.locality}, {property.city} · Owner:{' '}
                 {property.owner?.name}
               </p>
-            </div>
+            </Link>
 
             <div className="flex items-center gap-2">
               <button

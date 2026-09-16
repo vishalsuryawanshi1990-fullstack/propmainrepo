@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard'
 import Kyc from './pages/Kyc'
 import Login from './pages/Login'
 import Properties from './pages/Properties'
+import PropertyDetail from './pages/PropertyDetail'
 import PropertyForm from './pages/PropertyForm'
 import Reports from './pages/Reports'
 import ScratchRewards from './pages/ScratchRewards'
@@ -24,6 +25,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/properties" element={<Properties />} />
+          <Route path="/properties/:id" element={<PropertyDetail />} />
           <Route path="/kyc" element={<Kyc />} />
           <Route path="/users" element={<Users />} />
           <Route path="/reports" element={<Reports />} />
