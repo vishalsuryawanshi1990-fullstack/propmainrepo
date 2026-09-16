@@ -2,11 +2,19 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import CityAutocomplete from '@/components/CityAutocomplete'
 import LocationPicker from '@/components/LocationPicker'
 
 interface Option {
   id: number
   name: string
+}
+
+interface City {
+  id: number
+  name: string
+  state: string | null
+  country: string | null
 }
 
 const initialForm = {
@@ -17,6 +25,7 @@ const initialForm = {
   price: '',
   city_id: '',
   locality_id: '',
+  locality_text: '',
   address: '',
   latitude: '',
   longitude: '',
@@ -28,8 +37,9 @@ const initialForm = {
 export default function PostPropertyForm() {
   const router = useRouter()
   const [propertyTypes, setPropertyTypes] = useState<Option[]>([])
-  const [cities, setCities] = useState<Option[]>([])
+  const [cities, setCities] = useState<City[]>([])
   const [localities, setLocalities] = useState<Option[]>([])
+  const [localitiesLoadedForCityId, setLocalitiesLoadedForCityId] = useState<string | null>(null)
   const [form, setForm] = useState(initialForm)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -55,7 +65,10 @@ export default function PostPropertyForm() {
 
     fetch(`/api/localities?city_id=${form.city_id}`)
       .then((r) => r.json())
-      .then((json) => setLocalities(json.data ?? []))
+      .then((json) => {
+        setLocalities(json.data ?? [])
+        setLocalitiesLoadedForCityId(form.city_id)
+      })
   }, [form.city_id])
 
   function set<K extends keyof typeof initialForm>(key: K, value: (typeof initialForm)[K]) {
@@ -75,7 +88,8 @@ export default function PostPropertyForm() {
         ...form,
         property_type_id: Number(form.property_type_id),
         city_id: Number(form.city_id),
-        locality_id: Number(form.locality_id),
+        locality_id: form.locality_id ? Number(form.locality_id) : null,
+        locality_text: form.locality_id ? null : form.locality_text || null,
         price: Number(form.price),
         latitude: Number(form.latitude),
         longitude: Number(form.longitude),
@@ -217,39 +231,42 @@ export default function PostPropertyForm() {
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="City" error={errors.city_id}>
-          <select
-            required
+          <CityAutocomplete
+            cities={cities}
             value={form.city_id}
-            onChange={(e) => {
-              set('city_id', e.target.value)
+            onChange={(cityId) => {
+              set('city_id', cityId)
               set('locality_id', '')
+              set('locality_text', '')
             }}
-            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
-          >
-            <option value="">Select…</option>
-            {cities.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          />
         </Field>
 
-        <Field label="Locality" error={errors.locality_id}>
-          <select
-            required
-            disabled={!form.city_id}
-            value={form.locality_id}
-            onChange={(e) => set('locality_id', e.target.value)}
-            className="w-full rounded-lg border border-neutral-300 px-3 py-2 disabled:opacity-50"
-          >
-            <option value="">Select…</option>
-            {localities.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
+        <Field label="Locality / neighborhood" error={errors.locality_id ?? errors.locality_text}>
+          {localitiesLoadedForCityId === form.city_id && localities.length === 0 ? (
+            <input
+              required
+              placeholder="e.g. Downtown, Sector 12…"
+              value={form.locality_text}
+              onChange={(e) => set('locality_text', e.target.value)}
+              className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+            />
+          ) : (
+            <select
+              required
+              disabled={!form.city_id}
+              value={form.locality_id}
+              onChange={(e) => set('locality_id', e.target.value)}
+              className="w-full rounded-lg border border-neutral-300 px-3 py-2 disabled:opacity-50"
+            >
+              <option value="">Select…</option>
+              {localities.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          )}
         </Field>
       </div>
 
