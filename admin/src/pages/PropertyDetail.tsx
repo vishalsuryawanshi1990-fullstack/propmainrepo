@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import CityAutocomplete from '../components/CityAutocomplete'
 import LocationPicker from '../components/LocationPicker'
 import { api, type ApiEnvelope } from '../lib/api'
 import { useAuthStore } from '../lib/auth'
@@ -13,7 +14,8 @@ interface PropertyType {
 interface City {
   id: number
   name: string
-  state: string
+  state: string | null
+  country: string | null
 }
 interface Locality {
   id: number
@@ -46,8 +48,9 @@ interface PropertyDetailData {
   furnishing_status: string | null
   city_id: number
   city: string | null
-  locality_id: number
+  locality_id: number | null
   locality: string | null
+  locality_text: string | null
   address: string
   latitude: number
   longitude: number
@@ -74,6 +77,7 @@ interface FormState {
   furnishing_status: string
   city_id: string
   locality_id: string
+  locality_text: string
   address: string
   latitude: string
   longitude: string
@@ -114,7 +118,8 @@ export default function PropertyDetail() {
       total_floors: property.total_floors !== null ? String(property.total_floors) : '',
       furnishing_status: property.furnishing_status ?? '',
       city_id: String(property.city_id),
-      locality_id: String(property.locality_id),
+      locality_id: property.locality_id !== null ? String(property.locality_id) : '',
+      locality_text: property.locality_text ?? '',
       address: property.address,
       latitude: String(property.latitude),
       longitude: String(property.longitude),
@@ -159,7 +164,8 @@ export default function PropertyDetail() {
         total_floors: form.total_floors ? Number(form.total_floors) : null,
         furnishing_status: form.furnishing_status || null,
         city_id: Number(form.city_id),
-        locality_id: Number(form.locality_id),
+        locality_id: form.locality_id ? Number(form.locality_id) : null,
+        locality_text: form.locality_id ? null : form.locality_text || null,
         address: form.address,
         latitude: Number(form.latitude),
         longitude: Number(form.longitude),
@@ -525,31 +531,35 @@ export default function PropertyDetail() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>City</label>
-              <select
+              <CityAutocomplete
+                cities={cities}
                 value={form.city_id}
-                onChange={(e) => setForm({ ...form, city_id: e.target.value, locality_id: '' })}
-                className={inputClass}
-              >
-                {cities?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}, {c.state}
-                  </option>
-                ))}
-              </select>
+                onChange={(cityId) => setForm({ ...form, city_id: cityId, locality_id: '', locality_text: '' })}
+                inputClassName={inputClass}
+              />
             </div>
             <div>
-              <label className={labelClass}>Locality</label>
-              <select
-                value={form.locality_id}
-                onChange={(e) => setForm({ ...form, locality_id: e.target.value })}
-                className={inputClass}
-              >
-                {localities?.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
+              <label className={labelClass}>Locality / neighborhood</label>
+              {localities && localities.length === 0 ? (
+                <input
+                  placeholder="e.g. Downtown, Sector 12…"
+                  value={form.locality_text}
+                  onChange={(e) => setForm({ ...form, locality_text: e.target.value })}
+                  className={inputClass}
+                />
+              ) : (
+                <select
+                  value={form.locality_id}
+                  onChange={(e) => setForm({ ...form, locality_id: e.target.value })}
+                  className={inputClass}
+                >
+                  {localities?.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 

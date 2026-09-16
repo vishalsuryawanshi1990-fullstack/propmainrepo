@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import CityAutocomplete from '../components/CityAutocomplete'
 import LocationPicker from '../components/LocationPicker'
 import { api, type ApiEnvelope } from '../lib/api'
 
@@ -12,7 +13,8 @@ interface PropertyType {
 interface City {
   id: number
   name: string
-  state: string
+  state: string | null
+  country: string | null
 }
 
 interface Locality {
@@ -41,6 +43,7 @@ interface FormState {
   furnishing_status: string
   city_id: string
   locality_id: string
+  locality_text: string
   address: string
   latitude: string
   longitude: string
@@ -64,6 +67,7 @@ const emptyForm: FormState = {
   furnishing_status: '',
   city_id: '',
   locality_id: '',
+  locality_text: '',
   address: '',
   latitude: '',
   longitude: '',
@@ -116,7 +120,8 @@ export default function PropertyForm() {
         total_floors: form.total_floors ? Number(form.total_floors) : null,
         furnishing_status: form.furnishing_status || null,
         city_id: Number(form.city_id),
-        locality_id: Number(form.locality_id),
+        locality_id: form.locality_id ? Number(form.locality_id) : null,
+        locality_text: form.locality_id ? null : form.locality_text || null,
         address: form.address,
         latitude: Number(form.latitude),
         longitude: Number(form.longitude),
@@ -313,40 +318,41 @@ export default function PropertyForm() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>City</label>
-            <select
-              required
+            <CityAutocomplete
+              cities={cities}
               value={form.city_id}
-              onChange={(e) => setForm({ ...form, city_id: e.target.value, locality_id: '' })}
-              className={inputClass}
-            >
-              <option value="" disabled>
-                Select…
-              </option>
-              {cities?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}, {c.state}
-                </option>
-              ))}
-            </select>
+              onChange={(cityId) => setForm({ ...form, city_id: cityId, locality_id: '', locality_text: '' })}
+              inputClassName={inputClass}
+            />
           </div>
           <div>
-            <label className={labelClass}>Locality</label>
-            <select
-              required
-              disabled={!form.city_id}
-              value={form.locality_id}
-              onChange={(e) => setForm({ ...form, locality_id: e.target.value })}
-              className={inputClass}
-            >
-              <option value="" disabled>
-                {form.city_id ? 'Select…' : 'Select a city first'}
-              </option>
-              {localities?.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
+            <label className={labelClass}>Locality / neighborhood</label>
+            {form.city_id && localities && localities.length === 0 ? (
+              <input
+                required
+                placeholder="e.g. Downtown, Sector 12…"
+                value={form.locality_text}
+                onChange={(e) => setForm({ ...form, locality_text: e.target.value })}
+                className={inputClass}
+              />
+            ) : (
+              <select
+                required
+                disabled={!form.city_id}
+                value={form.locality_id}
+                onChange={(e) => setForm({ ...form, locality_id: e.target.value })}
+                className={inputClass}
+              >
+                <option value="" disabled>
+                  {form.city_id ? 'Select…' : 'Select a city first'}
                 </option>
-              ))}
-            </select>
+                {localities?.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
 
