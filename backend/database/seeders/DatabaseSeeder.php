@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(RolesAndPermissionsSeeder::class);
         $this->call(MasterDataSeeder::class);
+        $this->call(WorldCitiesSeeder::class);
+        $this->call(IndianLocalitiesSeeder::class);
 
         $admin = User::factory()->create([
             'name' => 'Test Admin',

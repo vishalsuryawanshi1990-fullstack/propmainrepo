@@ -36,7 +36,12 @@ class StorePropertyRequest extends FormRequest
             'total_floors' => ['nullable', 'integer', 'min:0'],
             'furnishing_status' => ['nullable', 'string', 'max:50'],
             'city_id' => ['required', 'integer', 'exists:cities_master,id'],
-            'locality_id' => ['required', 'integer', 'exists:localities_master,id'],
+            // Localities are only curated for a handful of Indian cities —
+            // everywhere else, the client sends free-text locality_text
+            // instead (see the make_locality_optional_on_properties_table
+            // migration).
+            'locality_id' => ['required_without:locality_text', 'nullable', 'integer', 'exists:localities_master,id'],
+            'locality_text' => ['required_without:locality_id', 'nullable', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:500'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],

@@ -41,7 +41,7 @@ class MasterDataController extends Controller
 
     public function cities(): JsonResponse
     {
-        $cities = Cache::remember('master:cities', now()->addDay(), fn () => CityMaster::orderBy('name')->get(['id', 'name', 'state'])->toArray());
+        $cities = Cache::remember('master:cities', now()->addDay(), fn () => CityMaster::orderBy('name')->get(['id', 'name', 'state', 'country'])->toArray());
 
         return response()->apiSuccess($cities);
     }

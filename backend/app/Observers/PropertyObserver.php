@@ -21,8 +21,8 @@ class PropertyObserver
             $property->city_name = $property->city?->name;
         }
 
-        if ($property->isDirty('locality_id')) {
-            $property->locality_name = $property->locality?->name;
+        if ($property->isDirty('locality_id') || $property->isDirty('locality_text')) {
+            $property->locality_name = $property->locality_id ? $property->locality?->name : $property->locality_text;
         }
     }
 

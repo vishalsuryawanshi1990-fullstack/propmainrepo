@@ -16,7 +16,7 @@ use Laravel\Scout\Searchable;
 #[Fillable([
     'owner_id', 'agent_id', 'title', 'description', 'property_type_id', 'listing_type',
     'price', 'price_negotiable', 'area_sqft', 'bedrooms', 'bathrooms', 'floor_no',
-    'total_floors', 'furnishing_status', 'city_id', 'locality_id', 'city_name', 'locality_name', 'address',
+    'total_floors', 'furnishing_status', 'city_id', 'locality_id', 'locality_text', 'city_name', 'locality_name', 'address',
     'latitude', 'longitude', 'rera_registration_no', 'status', 'is_featured',
     'address_price_hash', 'primary_image_hash', 'duplicate_of_property_id', 'is_flagged_duplicate',
 ])]

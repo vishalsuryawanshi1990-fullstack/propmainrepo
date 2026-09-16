@@ -3,16 +3,14 @@
 namespace Database\Seeders;
 
 use App\Models\AmenityMaster;
-use App\Models\CityMaster;
-use App\Models\LocalityMaster;
 use App\Models\PropertyTypeMaster;
 use Illuminate\Database\Seeder;
 
 /**
- * Reference data every "post a property" form needs for its dropdowns
- * (MasterDataController) — never had real rows, only the migrations
- * that create these tables. Real Indian cities/localities since phone
- * numbers/currency elsewhere in the app are India-specific.
+ * Property types and amenities — the two pieces of MasterDataController's
+ * reference data that aren't geographic. Cities/localities are seeded by
+ * WorldCitiesSeeder + IndianLocalitiesSeeder instead (see those for why
+ * they're split out).
  */
 class MasterDataSeeder extends Seeder
 {
@@ -25,19 +23,6 @@ class MasterDataSeeder extends Seeder
         'Farmhouse',
         'Penthouse',
         'Studio Apartment',
-    ];
-
-    /**
-     * @var array<string, array{state: string, localities: array<int, string>}>
-     */
-    protected array $cities = [
-        'Mumbai' => ['state' => 'Maharashtra', 'localities' => ['Andheri West', 'Bandra West', 'Powai', 'Thane West', 'Malad West']],
-        'Pune' => ['state' => 'Maharashtra', 'localities' => ['Baner', 'Hinjewadi', 'Kothrud', 'Viman Nagar', 'Wakad']],
-        'Bangalore' => ['state' => 'Karnataka', 'localities' => ['Whitefield', 'Koramangala', 'Indiranagar', 'Electronic City', 'HSR Layout']],
-        'Delhi' => ['state' => 'Delhi', 'localities' => ['Dwarka', 'Rohini', 'Saket', 'Vasant Kunj', 'Karol Bagh']],
-        'Hyderabad' => ['state' => 'Telangana', 'localities' => ['Gachibowli', 'Hitech City', 'Kondapur', 'Madhapur', 'Banjara Hills']],
-        'Chennai' => ['state' => 'Tamil Nadu', 'localities' => ['OMR', 'Anna Nagar', 'Velachery', 'T Nagar', 'Adyar']],
-        'Ahmedabad' => ['state' => 'Gujarat', 'localities' => ['Satellite', 'Bopal', 'Vastrapur', 'SG Highway', 'Prahlad Nagar']],
     ];
 
     /**
@@ -55,14 +40,6 @@ class MasterDataSeeder extends Seeder
     {
         foreach ($this->propertyTypes as $name) {
             PropertyTypeMaster::firstOrCreate(['name' => $name]);
-        }
-
-        foreach ($this->cities as $cityName => $details) {
-            $city = CityMaster::firstOrCreate(['name' => $cityName], ['state' => $details['state']]);
-
-            foreach ($details['localities'] as $localityName) {
-                LocalityMaster::firstOrCreate(['city_id' => $city->id, 'name' => $localityName]);
-            }
         }
 
         foreach ($this->amenitiesByCategory as $category => $names) {

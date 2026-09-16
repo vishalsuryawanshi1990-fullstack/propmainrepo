@@ -153,6 +153,37 @@ class PropertyCatalogTest extends TestCase
         $this->getJson('/api/v1/properties/featured')->assertOk()->assertJsonCount(1, 'data');
     }
 
+    public function test_a_property_can_be_created_with_free_text_locality_instead_of_a_locality_id(): void
+    {
+        Bus::fake();
+
+        $seller = User::factory()->create();
+        $seller->assignRole('seller');
+
+        $payload = $this->validPayload();
+        unset($payload['locality_id']);
+        $payload['locality_text'] = 'Some Neighborhood';
+
+        $response = $this->actingAs($seller)->postJson('/api/v1/properties', $payload);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.locality_id', null)
+            ->assertJsonPath('data.locality_text', 'Some Neighborhood');
+    }
+
+    public function test_a_property_requires_either_locality_id_or_locality_text(): void
+    {
+        $seller = User::factory()->create();
+        $seller->assignRole('seller');
+
+        $payload = $this->validPayload();
+        unset($payload['locality_id']);
+
+        $this->actingAs($seller)->postJson('/api/v1/properties', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['locality_id', 'locality_text']);
+    }
+
     private function validPayload(): array
     {
         $type = PropertyTypeMaster::factory()->create();
