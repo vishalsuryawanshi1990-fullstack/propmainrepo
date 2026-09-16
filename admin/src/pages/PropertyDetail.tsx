@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import LocationPicker from '../components/LocationPicker'
 import { api, type ApiEnvelope } from '../lib/api'
 import { useAuthStore } from '../lib/auth'
 import { attachYoutubeVideo, uploadPropertyImage, uploadPropertyVideo } from '../lib/media'
@@ -562,29 +563,13 @@ export default function PropertyDetail() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Latitude</label>
-              <input
-                required
-                type="number"
-                step="any"
-                value={form.latitude}
-                onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Longitude</label>
-              <input
-                required
-                type="number"
-                step="any"
-                value={form.longitude}
-                onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-                className={inputClass}
-              />
-            </div>
+          <div>
+            <label className={labelClass}>Location</label>
+            <LocationPicker
+              latitude={form.latitude}
+              longitude={form.longitude}
+              onChange={(lat, lng) => setForm({ ...form, latitude: String(lat), longitude: String(lng) })}
+            />
           </div>
 
           <div>

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import LocationPicker from '../components/LocationPicker'
 import { api, type ApiEnvelope } from '../lib/api'
 
 interface PropertyType {
@@ -360,33 +361,13 @@ export default function PropertyForm() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Latitude</label>
-            <input
-              required
-              type="number"
-              step="any"
-              min={-90}
-              max={90}
-              value={form.latitude}
-              onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Longitude</label>
-            <input
-              required
-              type="number"
-              step="any"
-              min={-180}
-              max={180}
-              value={form.longitude}
-              onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-              className={inputClass}
-            />
-          </div>
+        <div>
+          <label className={labelClass}>Location</label>
+          <LocationPicker
+            latitude={form.latitude}
+            longitude={form.longitude}
+            onChange={(lat, lng) => setForm({ ...form, latitude: String(lat), longitude: String(lng) })}
+          />
         </div>
 
         <div>
@@ -440,10 +421,14 @@ export default function PropertyForm() {
           </button>
           <button
             type="submit"
-            disabled={create.isPending}
+            disabled={create.isPending || !form.latitude || !form.longitude}
             className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
           >
-            {create.isPending ? 'Creating…' : 'Create property'}
+            {create.isPending
+              ? 'Creating…'
+              : !form.latitude || !form.longitude
+                ? 'Pin a location to continue'
+                : 'Create property'}
           </button>
         </div>
       </form>
