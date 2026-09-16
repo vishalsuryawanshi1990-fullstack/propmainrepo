@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AttachMediaRequest;
+use App\Http\Requests\AttachYoutubeVideoRequest;
 use App\Http\Requests\PresignMediaRequest;
 use App\Http\Resources\PropertyImageResource;
 use App\Http\Resources\PropertyVideoResource;
@@ -89,6 +90,30 @@ class PropertyMediaController extends Controller
         return response()->apiSuccess(new $resource($record), 'Attached.', [], 201);
     }
 
+    /**
+     * A YouTube link needs no presign/upload round trip — it's just a URL,
+     * recorded the same way an uploaded video is (same primary/sort_order
+     * semantics, same PropertyVideoResource shape).
+     */
+    public function attachYoutube(AttachYoutubeVideoRequest $request, Property $property): JsonResponse
+    {
+        $isPrimary = $request->boolean('is_primary');
+
+        if ($isPrimary) {
+            $property->videos()->update(['is_primary' => false]);
+        }
+
+        $video = PropertyVideo::create([
+            'property_id' => $property->id,
+            'source' => 'youtube',
+            'youtube_url' => $request->string('youtube_url')->toString(),
+            'is_primary' => $isPrimary,
+            'sort_order' => $request->integer('sort_order'),
+        ]);
+
+        return response()->apiSuccess(new PropertyVideoResource($video), 'Attached.', [], 201);
+    }
+
     public function destroy(Property $property, string $type, int $mediaId, MediaUploadService $media): JsonResponse
     {
         $this->assertValidType($type);
@@ -97,7 +122,10 @@ class PropertyMediaController extends Controller
         $model = $type === 'image' ? PropertyImage::class : PropertyVideo::class;
         $record = $model::where('property_id', $property->id)->findOrFail($mediaId);
 
-        Storage::disk($media->disk())->delete($record->file_path);
+        if ($record->file_path !== null) {
+            Storage::disk($media->disk())->delete($record->file_path);
+        }
+
         $record->delete();
 
         return response()->apiSuccess(null, 'Removed.');

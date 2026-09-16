@@ -67,6 +67,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/properties/{property}/favorite', [FavoriteController::class, 'destroy']);
     Route::get('/favorites', [FavoriteController::class, 'index']);
 
+    Route::post('/properties/{property}/videos/youtube', [PropertyMediaController::class, 'attachYoutube']);
+
     Route::get('/properties/{property}/{type}/presigned-url', [PropertyMediaController::class, 'presignedUrl'])
         ->whereIn('type', ['image', 'video']);
     Route::post('/properties/{property}/{type}', [PropertyMediaController::class, 'attach'])

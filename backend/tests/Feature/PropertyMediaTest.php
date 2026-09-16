@@ -87,4 +87,46 @@ class PropertyMediaTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    public function test_a_youtube_link_can_be_attached_without_any_file_upload(): void
+    {
+        $owner = User::factory()->create();
+        $owner->assignRole('seller');
+        $property = Property::factory()->create(['owner_id' => $owner->id]);
+
+        $response = $this->actingAs($owner)->postJson("/api/v1/properties/{$property->id}/videos/youtube", [
+            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'is_primary' => true,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.source', 'youtube')
+            ->assertJsonPath('data.url', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+            ->assertJsonPath('data.is_primary', true);
+        $this->assertSame(1, $property->videos()->count());
+    }
+
+    public function test_a_non_youtube_url_is_rejected(): void
+    {
+        $owner = User::factory()->create();
+        $owner->assignRole('seller');
+        $property = Property::factory()->create(['owner_id' => $owner->id]);
+
+        $this->actingAs($owner)->postJson("/api/v1/properties/{$property->id}/videos/youtube", [
+            'youtube_url' => 'https://example.com/not-youtube.mp4',
+        ])->assertStatus(422);
+    }
+
+    public function test_a_stranger_cannot_attach_a_youtube_link_to_someone_elses_property(): void
+    {
+        $owner = User::factory()->create();
+        $owner->assignRole('seller');
+        $stranger = User::factory()->create();
+        $stranger->assignRole('seller');
+        $property = Property::factory()->create(['owner_id' => $owner->id]);
+
+        $this->actingAs($stranger)->postJson("/api/v1/properties/{$property->id}/videos/youtube", [
+            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        ])->assertStatus(403);
+    }
 }

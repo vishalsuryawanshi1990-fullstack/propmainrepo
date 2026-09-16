@@ -18,7 +18,10 @@ class PropertyVideoResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'url' => Storage::disk(app(MediaUploadService::class)->disk())->url($this->file_path),
+            'source' => $this->source,
+            'url' => $this->source === 'youtube'
+                ? $this->youtube_url
+                : Storage::disk(app(MediaUploadService::class)->disk())->url($this->file_path),
             'is_primary' => $this->is_primary,
             'sort_order' => $this->sort_order,
         ];

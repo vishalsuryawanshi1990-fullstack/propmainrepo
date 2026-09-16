@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['property_id', 'file_path', 'is_primary', 'sort_order'])]
+#[Fillable(['property_id', 'source', 'file_path', 'youtube_url', 'is_primary', 'sort_order'])]
 class PropertyVideo extends Model
 {
     use HasFactory, SoftDeletes;
