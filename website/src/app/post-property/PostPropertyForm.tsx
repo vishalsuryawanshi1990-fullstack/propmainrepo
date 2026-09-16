@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import LocationPicker from '@/components/LocationPicker'
 
 interface Option {
   id: number
@@ -33,6 +34,10 @@ export default function PostPropertyForm() {
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [createdPropertyId, setCreatedPropertyId] = useState<number | null>(null)
+  const [photos, setPhotos] = useState<File[]>([])
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/property-types')
@@ -88,7 +93,75 @@ export default function PostPropertyForm() {
       return
     }
 
-    router.push(`/properties/${json.data.id}`)
+    setCreatedPropertyId(json.data.id)
+  }
+
+  async function uploadPhotos() {
+    if (!createdPropertyId || photos.length === 0) return
+    setUploadingPhotos(true)
+    setPhotoError(null)
+
+    try {
+      for (let i = 0; i < photos.length; i++) {
+        const body = new FormData()
+        body.append('file', photos[i])
+        body.append('is_primary', String(i === 0))
+
+        const res = await fetch(`/api/properties/${createdPropertyId}/images`, { method: 'POST', body })
+        if (!res.ok) throw new Error('Upload failed')
+      }
+      router.push(`/properties/${createdPropertyId}`)
+    } catch {
+      setPhotoError('One or more photos failed to upload — please try again.')
+    } finally {
+      setUploadingPhotos(false)
+    }
+  }
+
+  if (createdPropertyId) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+          Listing details saved. Add at least one photo to finish — listings without photos get far less interest
+          from buyers.
+        </div>
+
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-neutral-700">Photos (at least 1 required)</span>
+          <input
+            required
+            type="file"
+            accept="image/jpeg,image/png"
+            multiple
+            onChange={(e) => setPhotos(e.target.files ? Array.from(e.target.files) : [])}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
+          />
+        </label>
+
+        {photos.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            {photos.map((file, i) => (
+              <img
+                key={i}
+                src={URL.createObjectURL(file)}
+                alt=""
+                className="h-20 w-20 rounded-lg object-cover"
+              />
+            ))}
+          </div>
+        )}
+
+        {photoError && <p className="text-sm text-red-600">{photoError}</p>}
+
+        <button
+          disabled={photos.length === 0 || uploadingPhotos}
+          onClick={uploadPhotos}
+          className="w-full rounded-lg bg-primary-600 py-2.5 font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+        >
+          {uploadingPhotos ? 'Uploading…' : 'Finish and submit for review'}
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -189,31 +262,20 @@ export default function PostPropertyForm() {
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Latitude" error={errors.latitude}>
-          <input
-            required
-            type="number"
-            step="any"
-            value={form.latitude}
-            onChange={(e) => set('latitude', e.target.value)}
-            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
-          />
-        </Field>
-        <Field label="Longitude" error={errors.longitude}>
-          <input
-            required
-            type="number"
-            step="any"
-            value={form.longitude}
-            onChange={(e) => set('longitude', e.target.value)}
-            className="w-full rounded-lg border border-neutral-300 px-3 py-2"
-          />
-        </Field>
+      <div>
+        <span className="mb-1 block text-sm font-medium text-neutral-700">Pin the exact location</span>
+        <LocationPicker
+          latitude={form.latitude}
+          longitude={form.longitude}
+          onChange={(lat, lng) => {
+            set('latitude', String(lat))
+            set('longitude', String(lng))
+          }}
+        />
+        {(errors.latitude || errors.longitude) && (
+          <span className="mt-1 block text-xs text-red-600">{(errors.latitude ?? errors.longitude)?.[0]}</span>
+        )}
       </div>
-      <p className="-mt-2 text-xs text-neutral-400">
-        Drop-pin map picker is a mobile-app feature (doc08) — enter coordinates directly here for now.
-      </p>
 
       <div className="grid grid-cols-3 gap-4">
         <Field label="Price (₹)" error={errors.price}>
@@ -244,15 +306,14 @@ export default function PostPropertyForm() {
       </div>
 
       <p className="text-sm text-neutral-500">
-        Listings go to moderation before appearing publicly — photos can be added once the listing is approved
-        (image upload is not yet supported from this form).
+        Next you&apos;ll add photos, then the listing goes to moderation before appearing publicly.
       </p>
 
       <button
-        disabled={submitting}
+        disabled={submitting || !form.latitude || !form.longitude}
         className="w-full rounded-lg bg-primary-600 py-2.5 font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
       >
-        {submitting ? 'Submitting…' : 'Submit for review'}
+        {submitting ? 'Submitting…' : !form.latitude || !form.longitude ? 'Pin a location to continue' : 'Continue to photos'}
       </button>
     </form>
   )
