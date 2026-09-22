@@ -30,10 +30,14 @@ class LocalityController extends Controller
                 ? round($liveProperties->avg(fn (Property $p) => $p->price / $p->area_sqft), 2)
                 : (float) $locality->avg_price_sqft;
 
+            // ->toArray() — this whole return value gets cached, and this
+            // environment fails to unserialize a cached Collection object
+            // cleanly (see PropertyController::featured()'s docblock).
             $trend = $liveProperties
                 ->groupBy(fn (Property $p) => $p->created_at->format('Y-m'))
                 ->map(fn ($group) => round($group->avg(fn (Property $p) => $p->price / $p->area_sqft), 2))
-                ->sortKeys();
+                ->sortKeys()
+                ->toArray();
 
             return [
                 'locality' => $locality->name,

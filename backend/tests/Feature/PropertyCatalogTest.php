@@ -153,6 +153,21 @@ class PropertyCatalogTest extends TestCase
         $this->getJson('/api/v1/properties/featured')->assertOk()->assertJsonCount(1, 'data');
     }
 
+    public function test_featured_endpoint_preserves_latest_first_order_across_a_cache_hit(): void
+    {
+        $older = Property::factory()->featured()->create(['created_at' => now()->subDay()]);
+        $newer = Property::factory()->featured()->create(['created_at' => now()]);
+
+        // First call populates the cache (ids only — see PropertyController::featured
+        // docblock), second call re-queries by those cached ids and must
+        // still come back newest-first, not database/whereIn order.
+        $this->getJson('/api/v1/properties/featured')->assertOk();
+        $response = $this->getJson('/api/v1/properties/featured');
+
+        $response->assertOk();
+        $this->assertSame([$newer->id, $older->id], collect($response->json('data'))->pluck('id')->all());
+    }
+
     public function test_a_property_can_be_created_with_free_text_locality_instead_of_a_locality_id(): void
     {
         Bus::fake();

@@ -114,15 +114,32 @@ class PropertyController extends Controller
         return response()->apiSuccess(PropertyResource::collection($similar));
     }
 
+    /**
+     * Caches only the id list (a plain array — safe to serialize) rather
+     * than the Eloquent Collection itself, then re-queries with the real
+     * eager loads every request. PropertyResource needs actual model
+     * relations (whenLoaded, etc.), not an array, so the models can't be
+     * cached directly the way MasterDataController's plain reference
+     * data is — and this environment fails to unserialize cached
+     * Eloquent Collection/Model objects cleanly (surfaces as "tried to
+     * call a method on an incomplete object").
+     */
     public function featured(): JsonResponse
     {
-        $featured = Cache::remember('properties:featured', now()->addMinutes(5), fn () => Property::query()
+        $ids = Cache::remember('properties:featured', now()->addMinutes(5), fn () => Property::query()
             ->where('status', 'live')
             ->where('is_featured', true)
-            ->with(['propertyType', 'city', 'locality', 'images' => fn ($q) => $q->where('is_primary', true)])
             ->latest()
             ->limit(20)
-            ->get());
+            ->pluck('id')
+            ->toArray());
+
+        $featured = Property::query()
+            ->whereIn('id', $ids)
+            ->with(['propertyType', 'city', 'locality', 'images' => fn ($q) => $q->where('is_primary', true)])
+            ->get()
+            ->sortBy(fn (Property $property) => array_search($property->id, $ids, true))
+            ->values();
 
         return response()->apiSuccess(PropertyResource::collection($featured));
     }
