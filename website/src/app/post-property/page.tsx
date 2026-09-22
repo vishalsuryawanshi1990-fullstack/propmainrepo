@@ -9,7 +9,7 @@ export default async function PostPropertyPage() {
 
   if (!session) redirect('/login')
 
-  if (!session.user.roles.some((r) => r === 'seller' || r === 'agent')) {
+  if (!session.user.roles.some((r) => r === 'seller' || r === 'agent' || r === 'admin')) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <h1 className="mb-2 text-2xl font-bold text-neutral-900">Owner/agent account required</h1>
